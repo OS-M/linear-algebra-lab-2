@@ -36,8 +36,8 @@ class Matrix {
   static Matrix<T> Ones(int n);
   static Matrix<T> Zeros(int n, int m);
   static Matrix<T> Random(int n, int m, T min, T max, int seed = time(nullptr));
-  static Matrix<T> Random(int n, int m, int min, int max,
-                          int seed = time(nullptr));
+  static Matrix<T> RandomInts(int n, int m, int min, int max,
+                              int seed = time(nullptr));
 
   std::string ToWolframString() const;
 
@@ -94,6 +94,8 @@ class Matrix {
   template<class U>
   friend bool operator!=(const Matrix<U>& a, const Matrix<U>& b);
 
+  static int GetPrecision();
+
   static T eps;
  private:
   std::shared_ptr<T[]> data_;
@@ -108,7 +110,7 @@ class Matrix {
 };
 
 template<class T>
-T Matrix<T>::eps = T();
+T Matrix<T>::eps = std::numeric_limits<T>::epsilon();
 
 template<class T>
 Matrix<T>::Matrix() : Matrix<T>(0, 0) {}
@@ -182,7 +184,7 @@ Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
 }
 
 template<class T>
-Matrix<T> Matrix<T>::Random(int n, int m, int min, int max, int seed) {
+Matrix<T> Matrix<T>::RandomInts(int n, int m, int min, int max, int seed) {
   Matrix<T> a(n, m);
   std::mt19937 gen(seed);
   std::uniform_int_distribution<int> dist(min, max);
@@ -197,11 +199,13 @@ Matrix<T> Matrix<T>::Random(int n, int m, int min, int max, int seed) {
 template<class T>
 std::string Matrix<T>::ToWolframString() const {
   std::stringstream res;
+  auto precision = Matrix<T>::GetPrecision();
   res << "{";
   for (int i = 0; i < this->Rows(); i++) {
     res << "{";
     for (int j = 0; j < this->Cols(); j++) {
-      res << std::fixed << std::setprecision(8) << this->At(i, j);
+      res << std::fixed << std::setprecision(precision)
+          << this->At(i, j);
       if (j + 1 != this->Cols()) {
         res << ",";
       }
@@ -529,6 +533,19 @@ Matrix<T>& Matrix<T>::CopyFrom(const Matrix<T>& b) {
   return *this;
 }
 
+template<class T>
+int Matrix<T>::GetPrecision() {
+  static int ans = -1;
+  if (ans == -1) {
+    if (std::is_floating_point<T>()) {
+      ans = std::abs(std::log10(Matrix<T>::eps));
+    } else {
+      ans = 0;
+    }
+  }
+  return ans;
+}
+
 template<class T, class U>
 void AssertEqualSizes(const T& a, const U& b) {
   if (a.Size() != b.Size()) {
@@ -541,10 +558,11 @@ template<class U>
 std::ostream& operator<<(std::ostream& stream,
                          const Matrix<U>& matrix) {
   size_t maxlen = 0;
+  auto precision = Matrix<U>::GetPrecision();
   for (size_t i = 0; i < matrix.Rows(); i++) {
     for (size_t j = 0; j < matrix.Cols(); j++) {
       std::stringstream ss;
-      ss << std::fixed << std::setprecision(5) << matrix.At(i, j);
+      ss << std::fixed << std::setprecision(precision) << matrix.At(i, j);
       maxlen = std::max(maxlen, ss.str().length());
     }
   }
@@ -554,7 +572,7 @@ std::ostream& operator<<(std::ostream& stream,
       stream << ' ';
     }
     for (size_t j = 0; j < matrix.Cols(); j++) {
-      stream << std::fixed << std::setprecision(5) << std::setw(maxlen)
+      stream << std::fixed << std::setprecision(precision) << std::setw(maxlen)
              << matrix.At(i, j);
       if (i + 1 < matrix.Rows() || j + 1 < matrix.Cols()) {
         stream << ", ";
