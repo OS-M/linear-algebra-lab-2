@@ -14,12 +14,15 @@ class Matrix {
   int Rows() const;
   int Cols() const;
 
-  Matrix<T> Copy();
-  Matrix<T> TransposedCopy();
+  Matrix<T> Transposed();
 
   static Matrix<T> Ones(int n, int m);
   static Matrix<T> Zeros(int n, int m);
-  static Matrix<T> Random(int min, int max, int seed = time(nullptr));
+  Matrix<T> Matrix<T>::Random(int n,
+                              int m,
+                              T min,
+                              T max,
+                              int seed = time(nullptr));
 
   std::string ToWolframString() const;
 
@@ -28,10 +31,24 @@ class Matrix {
   T& operator()(int i, int j);
   const T& operator()(int i, int j) const;
 
-  Matrix<T> SumMatrix(int i, int j, int n, int m) const;
+  T& At(int i);  // For vectors only
+  const T& At(int i) const;  // For vectors only
+  T& At(int i, int j);
+  const T& At(int i, int j) const;
 
-  Matrix<T> Row(int i) const;
-  Matrix<T> Col(int j) const;
+  const Matrix<T> SubMatrix(int i, int j, int n, int m) const;
+  Matrix<T> SubMatrix(int i, int j, int n, int m);
+
+  bool IsRowVector() const;
+  bool IsColVector() const;
+
+  const Matrix<T> Row(int i) const;
+  Matrix<T> Row(int i);
+  const Matrix<T> Col(int j) const;
+  Matrix<T> Col(int j);
+
+  friend Matrix<T>& operator=(Matrix<T>& a, const Matrix<T>& b);
+  friend Matrix<T>& operator=(Matrix<T>& a, Matrix<T>&& b);
 
   friend Matrix<T> operator+(const Matrix<T>& a, const Matrix<T>& b);
   friend Matrix<T> operator-(const Matrix<T>& a, const Matrix<T>& b);
@@ -60,6 +77,189 @@ class Matrix {
 
   bool IsSubMatrix() const;
 };
+
+template<class T>
+Matrix<T>::Matrix() : Matrix<T>(0, 0) {}
+
+template<class T>
+Matrix<T>::Matrix(int n, int m) : data_(new T[n * m]) {
+  data_rows_ = rows_ = n;
+  data_cols_ = cols_ = m;
+  for (int i = 0; i < this->Rows(); i++) {
+    for (int j = 0; j < this->Cols(); j++) {
+      (*this)(i, j) = T();
+    }
+  }
+}
+
+template<class T>
+Matrix<T>::Matrix(int n) : Matrix<T>(n, n) {}
+
+template<class T>
+std::pair<int, int> Matrix<T>::Size() const {
+  return {rows_, cols_};
+}
+
+template<class T>
+int Matrix<T>::Rows() const {
+  return rows_;
+}
+
+template<class T>
+int Matrix<T>::Cols() const {
+  return cols_;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::Transposed() {
+  return Matrix<T>();
+}
+
+template<class T>
+Matrix<T> Matrix<T>::Ones(int n, int m) {
+  Matrix<T> a(n, m);
+  for (int i = 0; i < std::min(n, m); i++) {
+    a(i, i) = 1;
+  }
+  return a;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::Zeros(int n, int m) {
+  return Matrix<T>(n, m);
+}
+
+template<class T>
+Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
+  Matrix<T> a(n, m);
+  std::mt19937 gen(seed);
+  std::uniform_real_distribution<T> dist(min, max);
+  for (int i = 0; i < this->Rows(); i++) {
+    for (int j = 0; j < this->Cols(); j++) {
+      a(i, j) = dist(gen);
+    }
+  }
+  return a;
+}
+
+template<class T>
+std::string Matrix<T>::ToWolframString() const {
+  std::stringstream res;
+  res << "{";
+  for (int i = 0; i < this->Rows(); i++) {
+    res << "{";
+    for (int j = 0; j < this->Cols(); j++) {
+      res << std::fixed << std::setprecision(4) << this->At(i, j);
+      if (j + 1 != this->Cols()) {
+        res << ",";
+      }
+    }
+    res << "}";
+    if (i + 1 != this->Rows()) {
+      res << ",";
+    }
+  }
+  res << "}";
+  return res.str();
+}
+
+template<class T>
+T& Matrix<T>::operator()(int i) {
+  return this->At(i);
+}
+
+template<class T>
+const T& Matrix<T>::operator()(int i) const {
+  return this->At(i);
+}
+
+template<class T>
+T& Matrix<T>::operator()(int i, int j) {
+  return this->At(i, j);
+}
+
+template<class T>
+const T& Matrix<T>::operator()(int i, int j) const {
+  return this->At(i, j);
+}
+
+template<class T>
+const Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) const {
+  return Matrix<T>();
+}
+template<class T>
+Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) {
+  return Matrix<T>();
+}
+template<class T>
+const Matrix<T> Matrix<T>::Row(int i) const {
+  return Matrix<T>();
+}
+template<class T>
+Matrix<T> Matrix<T>::Row(int i) {
+  return Matrix<T>();
+}
+template<class T>
+const Matrix<T> Matrix<T>::Col(int j) const {
+  return Matrix<T>();
+}
+template<class T>
+Matrix<T> Matrix<T>::Col(int j) {
+  return Matrix<T>();
+}
+template<class T>
+Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& a) {
+  return <#initializer#>;
+}
+template<class T>
+Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& a) {
+  return <#initializer#>;
+}
+template<class T>
+Matrix<T>& Matrix<T>::operator*=(const Matrix<T>& a) {
+  return <#initializer#>;
+}
+template<class T>
+Matrix<T>& Matrix<T>::operator/=(const Matrix<T>& a) {
+  return <#initializer#>;
+}
+template<class T>
+Matrix<T> Matrix<T>::operator*=(T b) {
+  return Matrix<T>();
+}
+template<class T>
+Matrix<T> Matrix<T>::operator/=(T b) {
+  return Matrix<T>();
+}
+template<class T>
+bool Matrix<T>::IsSubMatrix() const {
+  return false;
+}
+
+template<class T>
+bool Matrix<T>::IsRowVector() const {
+  return false;
+}
+template<class T>
+bool Matrix<T>::IsColVector() const {
+  return false;
+}
+template<class T>
+T& Matrix<T>::At(int i) {
+  return <#initializer#>;
+}
+template<class T>
+const T& Matrix<T>::At(int i) const {
+  return <#initializer#>;
+}
+template<class T>
+T& Matrix<T>::At(int i, int j) {
+  return <#initializer#>;
+}
+template<class T>
+const T& Matrix<T>::At(int i, int j) const {
+  return <#initializer#>;
+}
 
 template<class U>
 std::ostream& operator<<(std::ostream& stream,
