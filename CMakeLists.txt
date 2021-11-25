@@ -40,6 +40,6 @@ set(UBSAN_FLAGS
         FORCE)
 
 # Build Types
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${ASAN_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${ASAN_FLAGS}")
 
-add_executable(linear_algebra_lab_2 main.cpp Matrix/matrix.h Algebra/gauss.h Algebra/gauss_back_substitution.h Algebra/euclidean_norm.h Algebra/qr_hessenberg.h)
+add_executable(linear_algebra_lab_2 main.cpp Matrix/matrix.h Algebra/gauss.h Algebra/gauss_back_substitution.h Algebra/euclidean_norm.h Algebra/qr_hessenberg.h Algebra/qr_algorithm.h Algebra/rotations.h)

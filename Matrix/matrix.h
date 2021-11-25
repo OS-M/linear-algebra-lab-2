@@ -36,6 +36,8 @@ class Matrix {
   static Matrix<T> Ones(int n);
   static Matrix<T> Zeros(int n, int m);
   static Matrix<T> Random(int n, int m, T min, T max, int seed = time(nullptr));
+  static Matrix<T> Random(int n, int m, int min, int max,
+                          int seed = time(nullptr));
 
   std::string ToWolframString() const;
 
@@ -49,16 +51,16 @@ class Matrix {
   T& At(int i, int j);
   const T& At(int i, int j) const;
 
-  const Matrix<T> SubMatrix(int i, int j, int n, int m) const;
+  // const Matrix<T> SubMatrix(int i, int j, int n, int m) const;
   Matrix<T> SubMatrix(int i, int j, int n, int m);
 
   bool IsVector() const;
   bool IsRowVector() const;
   bool IsColVector() const;
 
-  const Matrix<T> Row(int i) const;
+  // const Matrix<T> Row(int i) const;
   Matrix<T> Row(int i);
-  const Matrix<T> Col(int j) const;
+  // const Matrix<T> Col(int j) const;
   Matrix<T> Col(int j);
 
   Matrix<T>& CopyFrom(const Matrix<T>& b);
@@ -180,6 +182,19 @@ Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
 }
 
 template<class T>
+Matrix<T> Matrix<T>::Random(int n, int m, int min, int max, int seed) {
+  Matrix<T> a(n, m);
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<int> dist(min, max);
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+      a(i, j) = dist(gen);
+    }
+  }
+  return a;
+}
+
+template<class T>
 std::string Matrix<T>::ToWolframString() const {
   std::stringstream res;
   res << "{";
@@ -220,10 +235,10 @@ const T& Matrix<T>::operator()(int i, int j) const {
   return this->At(i, j);
 }
 
-template<class T>
-const Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) const {
-  return const_cast<Matrix<T>*>(this)->SubMatrix(i, j, n, m);
-}
+// template<class T>
+// const Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) const {
+//   return const_cast<Matrix<T>*>(this)->SubMatrix(i, j, n, m);
+// }
 
 template<class T>
 Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) {
@@ -244,20 +259,20 @@ Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) {
   return a;
 }
 
-template<class T>
-const Matrix<T> Matrix<T>::Row(int i) const {
-  return const_cast<Matrix<T>*>(this)->Row(i);
-}
+// template<class T>
+// const Matrix<T> Matrix<T>::Row(int i) const {
+//   return const_cast<Matrix<T>*>(this)->Row(i);
+// }
 
 template<class T>
 Matrix<T> Matrix<T>::Row(int i) {
   return this->SubMatrix(i, 0, 1, this->Cols());
 }
 
-template<class T>
-const Matrix<T> Matrix<T>::Col(int j) const {
-  return const_cast<Matrix<T>*>(this)->Col(j);
-}
+// template<class T>
+// const Matrix<T> Matrix<T>::Col(int j) const {
+//   return const_cast<Matrix<T>*>(this)->Col(j);
+// }
 
 template<class T>
 Matrix<T> Matrix<T>::Col(int j) {
@@ -288,7 +303,7 @@ Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& a) {
 
 template<class T>
 Matrix<T>& Matrix<T>::operator*=(const Matrix<T>& a) {
-  *this = *this * a;
+  *this->CopyFrom(*this * a);
 }
 
 template<class T>
