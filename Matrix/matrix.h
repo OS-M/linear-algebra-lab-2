@@ -61,6 +61,7 @@ class Matrix {
   const Matrix<T> Col(int j) const;
   Matrix<T> Col(int j);
 
+  Matrix<T>& CopyFrom(const Matrix<T>& b);
   Matrix<T>& operator=(const Matrix<T>& b);
   Matrix<T>& operator=(Matrix<T>&& b);
 
@@ -419,7 +420,7 @@ Matrix<T> operator*(const Matrix<T>& lhs, U rhs) {
 template<class T, class U>
 Matrix<T> operator/(const Matrix<T>& lhs, U rhs) {
   Matrix<T> result = lhs;
-  result *= rhs;
+  result /= rhs;
   return result;
 }
 
@@ -500,6 +501,17 @@ Matrix<T>::Matrix(int n, int m, T value) : Matrix(n, m) {
 template<class U, class W>
 Matrix<U> operator*(W b, const Matrix<U>& a) {
   return a * b;
+}
+
+template<class T>
+Matrix<T>& Matrix<T>::CopyFrom(const Matrix<T>& b) {
+  AssertEqualSizes(*this, b);
+  for (int i = 0; i < this->Rows(); i++) {
+    for (int j = 0; j < this->Cols(); j++) {
+      this->At(i, j) = b.At(i, j);
+    }
+  }
+  return *this;
 }
 
 template<class T, class U>
