@@ -1,14 +1,13 @@
 #include <iostream>
 #include "Matrix/matrix.h"
+#include "Algebra/gauss.h"
 
 int main() {
   Matrix<double>::eps = 1e-6;
 
-  auto a = DMatrix::Ones(3);
-  a(1, 2) = 1;
-  auto b = a * a.Transposed() * 3;
+  auto a = DMatrix::Random(3, 3, 0, 1);
+  auto b = DMatrix(3, 1, 1);
   std::cout << a << b;
-  b.Col(1) *= 2;
-  b.Row(0) *= 2;
-  auto c = b.SubMatrix(2, 1, 1, 2).Transposed();
+  auto x = GaussSolve(a, b).first;
+  std::cout << x << a * x;
 }

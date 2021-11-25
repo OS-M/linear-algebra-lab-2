@@ -19,6 +19,7 @@ class Matrix {
  public:
   Matrix();
   Matrix(int n, int m);
+  Matrix(int n, int m, T value);
   Matrix(const Matrix<T>& other);
   Matrix(Matrix<T>&& other) noexcept;
   explicit Matrix(int n);
@@ -74,6 +75,8 @@ class Matrix {
   friend Matrix<U> operator*(const Matrix<U>& a, W b);
   template<class U, class W>
   friend Matrix<U> operator/(const Matrix<U>& a, W b);
+  template<class U, class W>
+  friend Matrix<U> operator*(W b, const Matrix<U>& a);
 
   Matrix<T>& operator+=(const Matrix<T>& a);
   Matrix<T>& operator-=(const Matrix<T>& a);
@@ -223,6 +226,12 @@ const Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) const {
 
 template<class T>
 Matrix<T> Matrix<T>::SubMatrix(int i, int j, int n, int m) {
+  if (n == -1) {
+    n = this->Rows() - i;
+  }
+  if (m == -1) {
+    m = this->Cols() - j;
+  }
   Matrix<T> a;
   a.data_ = this->data_;
   a.rows_ = n;
@@ -384,7 +393,11 @@ Matrix<T> operator-(const Matrix<T>& a, const Matrix<T>& b) {
 
 template<class T>
 Matrix<T> operator*(const Matrix<T>& lhs, const Matrix<T>& rhs) {
-  AssertEqualSizes(lhs, rhs);
+  if (lhs.Cols() != rhs.Rows()) {
+    throw std::runtime_error(
+        "Bad matrix sizes " + PairToString(lhs.Size()) + " "
+            + PairToString(rhs.Size()));
+  }
   Matrix<T> result(lhs.Rows(), rhs.Cols());
   for (int i = 0; i < lhs.Rows(); i++) {
     for (int k = 0; k < lhs.Cols(); k++) {
@@ -454,29 +467,39 @@ Matrix<T>::Matrix(const Matrix<T>& other) :
 
 template<class T>
 Matrix<T>::Matrix(Matrix<T>&& other) noexcept : Matrix() {
-  *this = other;
+  *this = std::move(other);
 }
 
 template<class T>
 Matrix<T>& Matrix<T>::operator=(const Matrix<T>& b) {
-  for (int i = 0; i < this->Rows(); i++) {
-    for (int j = 0; j < this->Cols(); j++) {
-      this->At(i, j) = b.At(i, j);
-    }
-  }
+  *this = std::move(Matrix<T>(b));
   return *this;
 }
 
 template<class T>
 Matrix<T>& Matrix<T>::operator=(Matrix<T>&& b) {
   std::swap(data_, b.data_);
-  std::swap(data_rows_, data_rows_);
-  std::swap(data_cols_, data_cols_);
-  std::swap(cols_, cols_);
-  std::swap(rows_, rows_);
-  std::swap(offset_i_, offset_i_);
-  std::swap(offset_j_, offset_j_);
+  std::swap(data_rows_, b.data_rows_);
+  std::swap(data_cols_, b.data_cols_);
+  std::swap(cols_, b.cols_);
+  std::swap(rows_, b.rows_);
+  std::swap(offset_i_, b.offset_i_);
+  std::swap(offset_j_, b.offset_j_);
   return *this;
+}
+
+template<class T>
+Matrix<T>::Matrix(int n, int m, T value) : Matrix(n, m) {
+  for (int i = 0; i < this->Rows(); i++) {
+    for (int j = 0; j < this->Cols(); j++) {
+      this->At(i, j) = value;
+    }
+  }
+}
+
+template<class U, class W>
+Matrix<U> operator*(W b, const Matrix<U>& a) {
+  return a * b;
 }
 
 template<class T, class U>
