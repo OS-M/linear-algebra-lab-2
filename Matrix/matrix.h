@@ -201,7 +201,7 @@ std::string Matrix<T>::ToWolframString() const {
   for (int i = 0; i < this->Rows(); i++) {
     res << "{";
     for (int j = 0; j < this->Cols(); j++) {
-      res << std::fixed << std::setprecision(4) << this->At(i, j);
+      res << std::fixed << std::setprecision(8) << this->At(i, j);
       if (j + 1 != this->Cols()) {
         res << ",";
       }
