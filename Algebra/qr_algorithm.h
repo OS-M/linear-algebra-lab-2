@@ -1,10 +1,55 @@
 #pragma once
 
+#include <complex>
 #include "Matrix/matrix.h"
 #include "rotations.h"
 
-template <class T>
-std::vector<T> QrAlgorithm(Matrix<T> a) {
+template<class T>
+int UnderDiagonalZeros(const Matrix<T>& a) {
+  if (!a.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(a.Size()) + " is not square.");
+  }
+  int ans = 0;
+  for (int i = 0; i < a.Rows() - 1; i++) {
+    if (std::abs(a(i + 1, i)) < Matrix<T>::eps) {
+      ans++;
+    }
+  }
+  return ans;
+}
+
+template<class T>
+bool DoDiagonalSquaresIntersect(const Matrix<T>& a) {
+  if (!a.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(a.Size()) + " is not square.");
+  }
+  for (int i = 0; i < a.Rows() - 2; i++) {
+    if (std::abs(a(i + 1, i)) > Matrix<T>::eps &&
+        std::abs(a(i + 2, i + 1)) > Matrix<T>::eps) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template<class T>
+std::pair<std::complex<T>,
+          std::complex<T>> ExtractEigenvalues(const Matrix<T>& a) {
+  if (a.Size() != std::make_pair(2, 2)) {
+    throw std::invalid_argument(
+        "Matrix a of size " + PairToString(a.Size()) + " should be (2;2)");
+  }
+  auto b = -a(0, 0) - a(1, 1);
+  auto c = a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
+  auto discrim = std::complex<T>(b * b - 4 * c);
+  auto discrim_sqrt = std::sqrt(discrim);
+  return {(-b - discrim_sqrt) / 2., (-b + discrim_sqrt) / 2.};
+}
+
+template<class T>
+std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a) {
   if (!a.IsSquare()) {
     throw std::invalid_argument(
         "Matrix of size " + PairToString(a.Size()) + " is not square.");
@@ -13,17 +58,35 @@ std::vector<T> QrAlgorithm(Matrix<T> a) {
   for (int k = 0; k < 60; k++) {
     std::vector<std::pair<T, T>> rotations;
     for (int i = 0; i < n - 1; i++) {
-      auto [sin, cos] = GetRotationMatrix(a.SubMatrix(i, i, 2, 1));
+      auto[sin, cos] = GetRotationMatrix(a.SubMatrix(i, i, 2, 1));
       rotations.emplace_back(sin, cos);
       ApplyRotation(a, sin, cos, i);
     }
 
     for (int i = 0; i < n - 1; i++) {
-      auto [sin, cos] = rotations[i];
+      auto[sin, cos] = rotations[i];
       ApplyTransposedRotation(a, sin, cos, i);
+    }
+
+    if (DoDiagonalSquaresIntersect(a) ||
+        UnderDiagonalZeros(a) < (n - 1) / 2) {
+      continue;
+    } else {
+      break;
     }
   }
   std::cerr << a;
+  std::vector<std::complex<T>> ans;
+  for (int i = 0; i < n; i++) {
+    if (i == n - 1 || std::abs(a(i + 1, i)) < Matrix<T>::eps) {
+      ans.emplace_back(a(i, i));
+    } else {
+      auto [e1, e2] = ExtractEigenvalues(a.SubMatrix(i, i, 2, 2));
+      ans.push_back(e1);
+      ans.push_back(e2);
+      i++;
+    }
+  }
 
-  return {};
+  return ans;
 }

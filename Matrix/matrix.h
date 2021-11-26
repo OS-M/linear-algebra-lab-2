@@ -10,8 +10,9 @@ void AssertEqualSizes(const T& a, const U& b);
 
 template<class T, class U>
 std::string PairToString(const std::pair<T, U>& pair) {
-  return "(" + std::to_string(pair.first) + "; " +
-      std::to_string(pair.second) + ")";
+  std::stringstream ss;
+  ss << "(" << pair.first << "; " << pair.second << ")";
+  return ss.str();
 }
 
 template<class T>
