@@ -49,13 +49,16 @@ std::pair<std::complex<T>,
 }
 
 template<class T>
-std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a) {
+std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a,
+                                         int* iters = nullptr,
+                                         int max_iter = 1000) {
   if (!a.IsSquare()) {
     throw std::invalid_argument(
         "Matrix of size " + PairToString(a.Size()) + " is not square.");
   }
   int n = a.Rows();
-  for (int k = 0; k < 60; k++) {
+  int iter;
+  for (iter = 0; iter < max_iter; iter++) {
     std::vector<std::pair<T, T>> rotations;
     for (int i = 0; i < n - 1; i++) {
       auto[sin, cos] = GetRotationMatrix(a.SubMatrix(i, i, 2, 1));
@@ -75,13 +78,20 @@ std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a) {
       break;
     }
   }
-  std::cerr << a;
+  if (iters) {
+    *iters = iter + 1;
+  }
+
+  if (iter == max_iter) {
+    return {};
+  }
+
   std::vector<std::complex<T>> ans;
   for (int i = 0; i < n; i++) {
     if (i == n - 1 || std::abs(a(i + 1, i)) < Matrix<T>::eps) {
       ans.emplace_back(a(i, i));
     } else {
-      auto [e1, e2] = ExtractEigenvalues(a.SubMatrix(i, i, 2, 2));
+      auto[e1, e2] = ExtractEigenvalues(a.SubMatrix(i, i, 2, 2));
       ans.push_back(e1);
       ans.push_back(e2);
       i++;

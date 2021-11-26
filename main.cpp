@@ -8,7 +8,7 @@
 int main() {
   Matrix<double>::eps = 1e-6;
 
-  auto a = DMatrix::Random(5, 5, 1, 10, 5);
+  auto a = DMatrix::Random(5, 5, 1, 10, 228);
   // auto b = DMatrix(3, 1, 1);
   // std::cout << a << b;
   // auto x = GaussSolve(a, b).first;
@@ -17,9 +17,11 @@ int main() {
   std::cout << a << a.ToWolframString();
   auto qr = QrHessenberg(a);
   std::cout << qr << qr.ToWolframString();
-  auto values = QrAlgorithm(qr);
+  int iters = 0;
+  auto values = QrAlgorithm(qr, &iters);
   for (auto val: values) {
     std::cout << val << '\n';
   }
+  std::cout << iters;
   // std::cout << a.ToWolframString();
 }
