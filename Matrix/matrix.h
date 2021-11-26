@@ -522,7 +522,6 @@ void Matrix<T>::CopyFrom(const Matrix<T>& other) {
 
 template<class T>
 void Matrix<T>::MakeRef(Matrix<T>&& b) {
-  std::cerr << "ref\n";
   data_ = b.data_;
   data_rows_ = b.data_rows_;
   data_cols_ = b.data_cols_;
@@ -534,7 +533,6 @@ void Matrix<T>::MakeRef(Matrix<T>&& b) {
 
 template<class T>
 void Matrix<T>::Assign(const Matrix<T>& b) {
-  std::cerr << "assign\n";
   AssertEqualSizes(*this, b);
   for (int i = 0; i < this->Rows(); i++) {
     for (int j = 0; j < this->Cols(); j++) {
@@ -558,7 +556,6 @@ int Matrix<T>::GetPrecision() {
 
 template<class T>
 void Matrix<T>::Swap(Matrix<T>& b) {
-  std::cerr << "move\n";
   std::swap(data_, b.data_);
   std::swap(data_rows_, b.data_rows_);
   std::swap(data_cols_, b.data_cols_);
