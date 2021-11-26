@@ -24,6 +24,11 @@ class Matrix {
   Matrix(Matrix<T>&& other) noexcept;
   explicit Matrix(int n);
 
+  void Swap(Matrix<T>& other);
+  void CopyFrom(const Matrix<T>& other);
+  void Assign(const Matrix<T>& b);
+  void MakeRef(Matrix<T>&& other);
+
   std::pair<int, int> Size() const;
 
   bool IsSquare() const;
@@ -63,7 +68,6 @@ class Matrix {
   // const Matrix<T> Col(int j) const;
   Matrix<T> Col(int j);
 
-  Matrix<T>& CopyFrom(const Matrix<T>& b);
   Matrix<T>& operator=(const Matrix<T>& b);
   Matrix<T>& operator=(Matrix<T>&& b);
 
@@ -116,19 +120,36 @@ template<class T>
 Matrix<T>::Matrix() : Matrix<T>(0, 0) {}
 
 template<class T>
-Matrix<T>::Matrix(int n, int m) : data_(new T[n * m]) {
-  offset_i_ = offset_j_ = 0;
-  data_rows_ = rows_ = n;
-  data_cols_ = cols_ = m;
+Matrix<T>::Matrix(int n, int m) : Matrix<T>(n, m, T()) {}
+
+template<class T>
+Matrix<T>::Matrix(int n, int m, T value) :
+    data_(new T[n * m]),
+    offset_i_(0),
+    offset_j_(0),
+    data_rows_(n),
+    rows_(n),
+    data_cols_(m),
+    cols_(m) {
   for (int i = 0; i < this->Rows(); i++) {
     for (int j = 0; j < this->Cols(); j++) {
-      (*this)(i, j) = T();
+      (*this)(i, j) = value;
     }
   }
 }
 
 template<class T>
 Matrix<T>::Matrix(int n) : Matrix<T>(n, n) {}
+
+template<class T>
+Matrix<T>::Matrix(const Matrix<T>& other) {
+  this->CopyFrom(other);
+}
+
+template<class T>
+Matrix<T>::Matrix(Matrix<T>&& other) noexcept : Matrix() {
+  this->Swap(other);
+}
 
 template<class T>
 std::pair<int, int> Matrix<T>::Size() const {
@@ -215,7 +236,7 @@ std::string Matrix<T>::ToWolframString() const {
       res << ",";
     }
   }
-  res << "}";
+  res << "}\n";
   return res.str();
 }
 
@@ -308,6 +329,7 @@ Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& a) {
 template<class T>
 Matrix<T>& Matrix<T>::operator*=(const Matrix<T>& a) {
   *this->CopyFrom(*this * a);
+  return *this;
 }
 
 template<class T>
@@ -476,45 +498,15 @@ bool operator!=(const Matrix<T>& a, const Matrix<T>& b) {
 }
 
 template<class T>
-Matrix<T>::Matrix(const Matrix<T>& other) :
-    Matrix<T>(other.Rows(), other.Cols()) {
-  for (int i = 0; i < this->Rows(); i++) {
-    for (int j = 0; j < this->Cols(); j++) {
-      this->At(i, j) = other.At(i, j);
-    }
-  }
-}
-
-template<class T>
-Matrix<T>::Matrix(Matrix<T>&& other) noexcept : Matrix() {
-  *this = std::move(other);
-}
-
-template<class T>
 Matrix<T>& Matrix<T>::operator=(const Matrix<T>& b) {
-  *this = std::move(Matrix<T>(b));
+  this->CopyFrom(b);
   return *this;
 }
 
 template<class T>
 Matrix<T>& Matrix<T>::operator=(Matrix<T>&& b) {
-  std::swap(data_, b.data_);
-  std::swap(data_rows_, b.data_rows_);
-  std::swap(data_cols_, b.data_cols_);
-  std::swap(cols_, b.cols_);
-  std::swap(rows_, b.rows_);
-  std::swap(offset_i_, b.offset_i_);
-  std::swap(offset_j_, b.offset_j_);
+  this->Swap(b);
   return *this;
-}
-
-template<class T>
-Matrix<T>::Matrix(int n, int m, T value) : Matrix(n, m) {
-  for (int i = 0; i < this->Rows(); i++) {
-    for (int j = 0; j < this->Cols(); j++) {
-      this->At(i, j) = value;
-    }
-  }
 }
 
 template<class U, class W>
@@ -523,14 +515,32 @@ Matrix<U> operator*(W b, const Matrix<U>& a) {
 }
 
 template<class T>
-Matrix<T>& Matrix<T>::CopyFrom(const Matrix<T>& b) {
+void Matrix<T>::CopyFrom(const Matrix<T>& other) {
+  this->MakeRef(Matrix<T>(other.Rows(), other.Cols()));
+  this->Assign(other);
+}
+
+template<class T>
+void Matrix<T>::MakeRef(Matrix<T>&& b) {
+  std::cerr << "ref\n";
+  data_ = b.data_;
+  data_rows_ = b.data_rows_;
+  data_cols_ = b.data_cols_;
+  cols_ = b.cols_;
+  rows_ = b.rows_;
+  offset_i_ = b.offset_i_;
+  offset_j_ = b.offset_j_;
+}
+
+template<class T>
+void Matrix<T>::Assign(const Matrix<T>& b) {
+  std::cerr << "assign\n";
   AssertEqualSizes(*this, b);
   for (int i = 0; i < this->Rows(); i++) {
     for (int j = 0; j < this->Cols(); j++) {
       this->At(i, j) = b.At(i, j);
     }
   }
-  return *this;
 }
 
 template<class T>
@@ -544,6 +554,18 @@ int Matrix<T>::GetPrecision() {
     }
   }
   return ans;
+}
+
+template<class T>
+void Matrix<T>::Swap(Matrix<T>& b) {
+  std::cerr << "move\n";
+  std::swap(data_, b.data_);
+  std::swap(data_rows_, b.data_rows_);
+  std::swap(data_cols_, b.data_cols_);
+  std::swap(cols_, b.cols_);
+  std::swap(rows_, b.rows_);
+  std::swap(offset_i_, b.offset_i_);
+  std::swap(offset_j_, b.offset_j_);
 }
 
 template<class T, class U>
