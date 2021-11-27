@@ -1,5 +1,7 @@
 #pragma once
 
+#include <complex>
+
 template<class T, class Matrix>
 T EuclideanNorm(const Matrix& a) {
   T res = T();

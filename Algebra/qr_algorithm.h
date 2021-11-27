@@ -68,8 +68,10 @@ std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a,
   if (iters) {
     *iters = iter + 1;
   }
-
   if (iter == max_iter) {
+    if (iters) {
+      *iters = -1;
+    }
     return {};
   }
 

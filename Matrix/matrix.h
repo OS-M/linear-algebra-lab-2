@@ -4,6 +4,7 @@
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <complex>
 
 template<class T, class U>
 void AssertEqualSizes(const T& a, const U& b);
