@@ -5,29 +5,46 @@
 #include "Algebra/qr_hessenberg.h"
 #include "Algebra/qr_algorithm.h"
 #include "Algebra/power_method.h"
+#include "Algebra/qr_decompose.h"
+#include "Algebra/minimal_square_problem.h"
 
 int main() {
   Matrix<double>::eps = 1e-6;
 
   {
+    DMatrix a{{1, 2},
+              {2, 3},
+              {3, 4},
+              {10, 100}};
+    DMatrix b{{1, 1, 3, 100}};
+    std::cout << a.Transposed().ToWolframString() << b.ToWolframString();
+    b = b.Transposed();
+    // auto gauss_x = GaussSolve(a, b).first;
+    // std::cout << a << b << gauss_x;
+    // std::cout << a * gauss_x - b;
+    auto solve = MinimalSquareProblem(a, b);
+    auto gauss_solve = GaussSolve(a.Transposed() * a, a.Transposed() * b).first;
+    std::cout << solve << gauss_solve;
+    std::cout << a * solve - b;
+    std::cout << a * gauss_solve - b;
+  }
+  return 0;
+  {
     auto a = DMatrix::Random(3, 3, 1, 10, 1337);
     int k = 1;
-    a(0, 0) = 5 * (k + 1);
-    a(0, 1) = 4 * (k + 1);
-    a(0, 2) = -2 * (1 + k);
-    a(1, 0) = -6 - 5 * k;
-    a(1, 1) = -5 - 4 * k;
-    a(1, 2) = 2 * (1 + k);
-    a(2, 0) = 2 * k;
-    a(2, 1) = 2 * k;
-    a(2, 2) = -1 - k;
+    // a(0, 0) = 5 * (k + 1);
+    // a(0, 1) = 4 * (k + 1);
+    // a(0, 2) = -2 * (1 + k);
+    // a(1, 0) = -6 - 5 * k;
+    // a(1, 1) = -5 - 4 * k;
+    // a(1, 2) = 2 * (1 + k);
+    // a(2, 0) = 2 * k;
+    // a(2, 1) = 2 * k;
+    // a(2, 2) = -1 - k;
     std::cout << a << a.ToWolframString();
     PowerMethodEigenvalues(a);
-    DMatrix b(3, 1);
-    b(0) = 1;
-    b(1) = -1;
-    b(2) = 1;
-    std::cout << b / EuclideanNorm<double>(b);
+    DMatrix b{{1.36, 0.88, 1}};
+    std::cout << b.Transposed() / EuclideanNorm<double>(b);
   }
   return 0;
   {

@@ -3,6 +3,19 @@
 template<class Matrix>
 Matrix SolveLxb(const Matrix& l,
                 const Matrix& b) {
+  if (!l.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(l.Size()) + " is not square.");
+  }
+  if (!b.IsColVector()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(b.Size()) + " is not col.");
+  }
+  if (b.Rows() != l.Rows()) {
+    throw std::invalid_argument(
+        "Bad matrix sizes: " + PairToString(l.Size()) + " and "
+            + PairToString(b.Size()));
+  }
   Matrix x(b.Rows(), 1);
   for (int i = 0; i < x.Rows(); i++) {
     auto sum = b.At(i, 0);
@@ -17,6 +30,19 @@ Matrix SolveLxb(const Matrix& l,
 template<class Matrix>
 Matrix SolveUxb(const Matrix& u,
                 const Matrix& b) {
+  if (!u.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(u.Size()) + " is not square.");
+  }
+  if (!b.IsColVector()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(b.Size()) + " is not col.");
+  }
+  if (b.Rows() != u.Rows()) {
+    throw std::invalid_argument(
+        "Bad matrix sizes: " + PairToString(u.Size()) + " and "
+            + PairToString(b.Size()));
+  }
   Matrix x(b.Rows(), 1);
   for (int i = x.Rows() - 1; i >= 0; i--) {
     auto sum = b.At(i, 0);

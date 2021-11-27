@@ -4,6 +4,14 @@
 
 template<class Matrix>
 std::pair<Matrix, int> GaussSolve(Matrix a, Matrix b) {
+  if (!a.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(a.Size()) + " is not square.");
+  }
+  if (!b.IsColVector()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(b.Size()) + " is not col.");
+  }
   auto n = a.Rows();
   std::vector <size_t> reindex(n);
   std::iota(reindex.begin(), reindex.end(), 0);

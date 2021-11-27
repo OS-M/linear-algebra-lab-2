@@ -19,16 +19,18 @@ template<class T>
 class Matrix {
  public:
   Matrix();
+  Matrix(std::initializer_list<std::initializer_list<T>>);
+  Matrix(std::initializer_list<T>) = delete;
   Matrix(int n, int m);
   Matrix(int n, int m, T value);
   Matrix(const Matrix<T>& other);
   Matrix(Matrix<T>&& other) noexcept;
   explicit Matrix(int n);
 
-  void Swap(Matrix<T>& other);
+  void Swap(Matrix<T>& b);
   void CopyFrom(const Matrix<T>& other);
   void Assign(const Matrix<T>& b);
-  void MakeRef(Matrix<T>&& other);
+  void MakeRef(Matrix<T>&& b);
 
   std::pair<int, int> Size() const;
 
@@ -70,7 +72,7 @@ class Matrix {
   Matrix<T> Col(int j);
 
   Matrix<T>& operator=(const Matrix<T>& b);
-  Matrix<T>& operator=(Matrix<T>&& b);
+  Matrix<T>& operator=(Matrix<T>&& b) noexcept;
 
   template<class U>
   friend Matrix<U> operator+(const Matrix<U>& a, const Matrix<U>& b);
@@ -136,6 +138,28 @@ Matrix<T>::Matrix(int n, int m, T value) :
     for (int j = 0; j < this->Cols(); j++) {
       (*this)(i, j) = value;
     }
+  }
+}
+
+template<class T>
+Matrix<T>::Matrix(
+    std::initializer_list<std::initializer_list<T>> list) :
+    Matrix(std::distance(list.begin(), list.end()),
+           std::distance(list.begin()->begin(), list.begin()->end())) {
+  int i = 0;
+  for (auto row: list) {
+    if (std::distance(row.begin(), row.end()) != this->Cols()) {
+      throw std::invalid_argument("All rows should have same size, got "
+                                      + std::to_string(std::distance(row.begin(),
+                                                                     row.end()))
+                                      + " instead of "
+                                      + std::to_string(this->Cols()));
+    }
+    int j = 0;
+    for (auto elem: row) {
+      this->At(i, j++) = elem;
+    }
+    i++;
   }
 }
 
@@ -472,6 +496,7 @@ T Matrix<T>::ScalarProduct(const Matrix<T>& b) const {
     throw std::runtime_error("Matrices of sizes " + PairToString(this->Size()) +
         " and " + PairToString(b.Size()) + " are not both vectors");
   }
+  AssertEqualSizes(*this, b);
   T ans = T();
   for (int i = 0; i < std::max(this->Cols(), this->Rows()); i++) {
     ans += this->At(i) * b.At(i);
@@ -505,7 +530,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& b) {
 }
 
 template<class T>
-Matrix<T>& Matrix<T>::operator=(Matrix<T>&& b) {
+Matrix<T>& Matrix<T>::operator=(Matrix<T>&& b) noexcept {
   this->Swap(b);
   return *this;
 }
