@@ -9,8 +9,8 @@
 #include "Algebra/minimal_square_problem.h"
 
 int main() {
-  Matrix<double>::eps = 1e-6;
-  Matrix<std::complex<double>>::eps = std::complex<double>(1e-6, 1e-6);
+  Matrix<double>::SetEps(1e-6, 6);
+  Matrix<std::complex<double>>::SetEps(std::complex<double>(1e-6, 1e-6), 6);
 
   // {
   //   DMatrix a{{1, 2},
@@ -31,19 +31,19 @@ int main() {
   // }
   // return 0;
   {
-    auto a = DMatrix::Random(3, 3, -2, 2, 1337229);
+    auto a = DMatrix::Random(3, 3, -2, 2, 145);
     int k = 1;
-    // a(0, 0) = 5 * (k + 1);
-    // a(0, 1) = 4 * (k + 1);
-    // a(0, 2) = -2 * (1 + k);
-    // a(1, 0) = -6 - 5 * k;
-    // a(1, 1) = -5 - 4 * k;
-    // a(1, 2) = 2 * (1 + k);
-    // a(2, 0) = 2 * k;
-    // a(2, 1) = 2 * k;
-    // a(2, 2) = -1 - k;
+    a(0, 0) = 5 * (k + 1);
+    a(0, 1) = 4 * (k + 1);
+    a(0, 2) = -2 * (1 + k);
+    a(1, 0) = -6 - 5 * k;
+    a(1, 1) = -5 - 4 * k;
+    a(1, 2) = 2 * (1 + k);
+    a(2, 0) = 2 * k;
+    a(2, 1) = 2 * k;
+    a(2, 2) = -1 - k;
     std::cout << a << a.ToWolframString();
-    PowerMethodEigenvalues3(a);
+    PowerMethodEigenvalues(a);
     DMatrix b{{1.36, 0.88, 1}};
     std::cout << b.Transposed() / EuclideanNorm<double>(b);
   }

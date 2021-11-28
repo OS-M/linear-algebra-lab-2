@@ -24,11 +24,11 @@ std::pair<Matrix, int> GaussSolve(Matrix a, Matrix b) {
       }
     }
     std::swap(reindex[i], reindex[index_of_max]);
-    if (std::abs(a.At(reindex[i], i)) < Matrix::eps) {
+    if (std::abs(a.At(reindex[i], i)) < Matrix::GetEps()) {
       continue;
     }
     for (int j = i + 1; j < n; j++) {
-      if (std::abs(a.At(reindex[j], i)) < Matrix::eps) {
+      if (std::abs(a.At(reindex[j], i)) < Matrix::GetEps()) {
         continue;
       }
       auto m = a.At(reindex[j], i) / a.At(reindex[i], i);
@@ -46,7 +46,7 @@ std::pair<Matrix, int> GaussSolve(Matrix a, Matrix b) {
     for (int j = 0; j < n; j++) {
       swapped_a.At(i, j) = a.At(reindex[i], j);
     }
-    if (std::fabs(swapped_a.At(i, i)) > Matrix::eps) {
+    if (std::fabs(swapped_a.At(i, i)) > Matrix::GetEps()) {
       rank++;
     }
   }

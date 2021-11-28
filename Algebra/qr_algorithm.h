@@ -13,7 +13,7 @@ int UnderDiagonalZeros(const Matrix<T>& a) {
   }
   int ans = 0;
   for (int i = 0; i < a.Rows() - 1; i++) {
-    if (std::abs(a(i + 1, i)) < Matrix<T>::eps) {
+    if (std::abs(a(i + 1, i)) < Matrix<T>::GetEps()) {
       ans++;
     }
   }
@@ -27,8 +27,8 @@ bool DoDiagonalSquaresIntersect(const Matrix<T>& a) {
         "Matrix of size " + PairToString(a.Size()) + " is not square.");
   }
   for (int i = 0; i < a.Rows() - 2; i++) {
-    if (std::abs(a(i + 1, i)) > Matrix<T>::eps &&
-        std::abs(a(i + 2, i + 1)) > Matrix<T>::eps) {
+    if (std::abs(a(i + 1, i)) > Matrix<T>::GetEps() &&
+        std::abs(a(i + 2, i + 1)) > Matrix<T>::GetEps()) {
       return true;
     }
   }
@@ -77,7 +77,7 @@ std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a,
 
   std::vector<std::complex<T>> ans;
   for (int i = 0; i < n; i++) {
-    if (i == n - 1 || std::abs(a(i + 1, i)) < Matrix<T>::eps) {
+    if (i == n - 1 || std::abs(a(i + 1, i)) < Matrix<T>::GetEps()) {
       ans.emplace_back(a(i, i));
     } else {
       auto[e1, e2] = ExtractEigenvalues2x2(a.SubMatrix(i, i, 2, 2));

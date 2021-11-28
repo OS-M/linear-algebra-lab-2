@@ -103,8 +103,9 @@ class Matrix {
   friend bool operator!=(const Matrix<U>& a, const Matrix<U>& b);
 
   static int GetPrecision();
+  static T GetEps();
+  static void SetEps(T eps, int precision);
 
-  static T eps;
  private:
   std::shared_ptr<T[]> data_;
   int data_rows_;
@@ -115,10 +116,27 @@ class Matrix {
   int offset_j_;
 
   bool IsSubMatrix() const;
+
+  static T eps;
+  static int precision;
 };
 
 template<class T>
 T Matrix<T>::eps = std::numeric_limits<T>::epsilon();
+
+template<class T>
+T Matrix<T>::GetEps() {
+  return eps;
+}
+
+template<class T>
+void Matrix<T>::SetEps(T eps_, int precision_) {
+  eps = eps_;
+  precision = precision_;
+}
+
+template<class T>
+int Matrix<T>::precision = 0;
 
 template<class T>
 Matrix<T>::Matrix() : Matrix<T>(0, 0) {}
@@ -516,7 +534,7 @@ bool operator!=(const Matrix<T>& a, const Matrix<T>& b) {
   for (int i = 0; i < a.Rows(); i++) {
     for (int j = 0; j < a.Cols(); j++) {
       if (a(i, j) != a(i, j) || b(i, j) != b(i, j) ||  // check for NaNs
-          std::abs(a(i, j) - b(i, j)) > Matrix<T>::eps) {
+          std::abs(a(i, j) - b(i, j)) > Matrix<T>::GetEps()) {
         return true;
       }
     }
@@ -570,15 +588,7 @@ void Matrix<T>::Assign(const Matrix<T>& b) {
 
 template<class T>
 int Matrix<T>::GetPrecision() {
-  static int ans = -1;
-  if (ans == -1) {
-    if (std::is_floating_point<T>()) {
-      ans = std::abs(std::log10(Matrix<T>::eps));
-    } else {
-      ans = 0;
-    }
-  }
-  return ans;
+  return precision;
 }
 
 template<class T>
