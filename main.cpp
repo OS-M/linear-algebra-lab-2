@@ -31,8 +31,8 @@ int main() {
   // }
   // return 0;
   {
-    auto a = DMatrix::Random(3, 3, -2, 2, 145);
-    int k = 1;
+    auto a = DMatrix::Random(3, 3, -2, 2, 12);
+    int k = 2;
     a(0, 0) = 5 * (k + 1);
     a(0, 1) = 4 * (k + 1);
     a(0, 2) = -2 * (1 + k);
@@ -43,9 +43,12 @@ int main() {
     a(2, 1) = 2 * k;
     a(2, 2) = -1 - k;
     std::cout << a << a.ToWolframString();
-    PowerMethodEigenvalues(a);
-    DMatrix b{{1.36, 0.88, 1}};
-    std::cout << b.Transposed() / EuclideanNorm<double>(b);
+    auto ans = PowerMethodEigenvalues(a);
+    for (auto [e, v]: ans) {
+      std::cout << e << '\n' << v;
+    }
+    // DMatrix b{{1.36, 0.88, 1}};
+    // std::cout << b.Transposed() / EuclideanNorm<double>(b);
   }
   return 0;
   {
