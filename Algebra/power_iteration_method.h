@@ -43,6 +43,7 @@ template<class T>
 std::vector<std::pair<std::complex<T>,
                       Matrix<std::complex<T>>>> PowerMethodEigenvalues(
     const Matrix<T>& a,
+    int* iters = nullptr,
     int max_iters = 100) {
   if (!a.IsSquare()) {
     throw std::invalid_argument(
@@ -72,7 +73,7 @@ std::vector<std::pair<std::complex<T>,
   Matrix<std::complex<T>> v1;
   Matrix<std::complex<T>> v2;
 
-  int iters = 0;
+  int iter = 0;
 
   while (error1 > Matrix<T>::GetEps() &&
          error2 > Matrix<T>::GetEps()) {
@@ -82,16 +83,20 @@ std::vector<std::pair<std::complex<T>,
     v1 = p1.second;
     r2 = p2.first;
     v2 = p2.second;
-    // std::cerr << r1 << ' ' << r2 << '\n';
-    // std::cerr << v1.Transposed() << v2.Transposed();
     error1 = std::sqrt(std::norm(
         EuclideanNorm<std::complex<T>>(complex_a * v1 - r1 * v1)));
     error2 = std::sqrt(std::norm(
         EuclideanNorm<std::complex<T>>(complex_a * v2 - r2 * v2)));
-
-    iters++;
-    if (iters > max_iters && std::abs(error1 - error2) < Matrix<T>::GetEps()) {
+    iter++;
+    if (iter > max_iters && std::abs(error1 - error2) < Matrix<T>::GetEps()) {
       error1 = error2 = 0;
+    }
+  }
+
+  if (iters) {
+    *iters = iter + 1;
+    if (iter >= max_iters) {
+      *iters = -1;
     }
   }
 
