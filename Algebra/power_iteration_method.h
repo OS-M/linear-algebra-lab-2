@@ -89,6 +89,7 @@ std::vector<std::pair<std::complex<T>,
         EuclideanNorm<std::complex<T>>(complex_a * v2 - r2 * v2)));
     iter++;
     if (iter > max_iters && std::abs(error1 - error2) < Matrix<T>::GetEps()) {
+      std::cerr << error1 << ' ' << error2 << '\n';
       error1 = error2 = 0;
     }
   }

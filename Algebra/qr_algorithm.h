@@ -47,6 +47,7 @@ std::vector<std::complex<T>> QrAlgorithm(Matrix<T> a,
   int iter;
   for (iter = 0; iter < max_iter; iter++) {
     std::vector<std::pair<T, T>> rotations;
+    rotations.reserve(n);
     for (int i = 0; i < n - 1; i++) {
       auto[sin, cos] = GetRotationMatrix(a.SubMatrix(i, i, 2, 1));
       rotations.emplace_back(sin, cos);

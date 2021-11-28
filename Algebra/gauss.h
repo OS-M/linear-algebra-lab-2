@@ -13,13 +13,14 @@ std::pair<Matrix, int> GaussSolve(Matrix a, Matrix b) {
         "Matrix of size " + PairToString(b.Size()) + " is not col.");
   }
   auto n = a.Rows();
-  std::vector <size_t> reindex(n);
+  std::vector<size_t> reindex(n);
   std::iota(reindex.begin(), reindex.end(), 0);
 
   for (int i = 0; i < n; i++) {
     size_t index_of_max = i;
     for (int k = i + 1; k < n; k++) {
-      if (a.At(reindex[index_of_max], i) < a.At(reindex[k], i)) {
+      if (std::abs(a.At(reindex[index_of_max], i))
+          < std::abs(a.At(reindex[k], i))) {
         index_of_max = k;
       }
     }
