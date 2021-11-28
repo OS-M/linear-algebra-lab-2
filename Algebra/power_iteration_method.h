@@ -28,6 +28,21 @@ std::vector<std::pair<T, Matrix<T>>> PowerMethodEigenvalues1(
 }
 
 template<class T>
+std::vector<Matrix<T>, Matrix<T>> PowerMethodEigenvaluesMethod2Iteration(
+    const Matrix<T>& a,
+    const Matrix<T>& squared_a,
+    Matrix<T>& y,
+    Matrix<T>& u,
+    T& lambda) {
+  y.Assign(squared_a * u);
+  u.Assign(y / EuclideanNorm<T>(y));
+  lambda = (u.ScalarProduct(squared_a * u));
+  return {
+      (std::sqrt(lambda) * a * u + squared_a * u) / (2 * lambda),
+      (-std::sqrt(lambda) * a * u + squared_a * u) / (2 * lambda)};
+}
+
+template<class T>
 std::vector<std::pair<T, Matrix<T>>> PowerMethodEigenvalues2(
     const Matrix<T>& a) {
   if (!a.IsSquare()) {
@@ -103,21 +118,6 @@ std::vector<std::pair<T, Matrix<T>>> PowerMethodEigenvalues3(
 }
 
 template<class T>
-std::vector<Matrix<T>, Matrix<T>> PowerMethodEigenvaluesMethod2Iteration(
-    const Matrix<T>& a,
-    const Matrix<T>& squared_a,
-    Matrix<T>& y,
-    Matrix<T>& u,
-    T& lambda) {
-  y.Assign(squared_a * u);
-  u.Assign(y / EuclideanNorm<T>(y));
-  lambda = (u.ScalarProduct(squared_a * u));
-  return {
-      (std::sqrt(lambda) * a * u + squared_a * u) / (2 * lambda),
-      (-std::sqrt(lambda) * a * u + squared_a * u) / (2 * lambda)};
-}
-
-template<class T>
 std::pair<std::pair<std::complex<T>, Matrix<std::complex<T>>>,
           std::pair<std::complex<T>, Matrix<std::complex<T>>>>
 PowerMethodEigenvaluesComplexIteration(
@@ -142,9 +142,9 @@ PowerMethodEigenvaluesComplexIteration(
   auto c = MinimalSquareProblem(l, r);
   auto[r1, r2] = SolveQuadraticEquation<T>(1, c(1), c(0));
 
-  auto aa = (r1 * a * u + squared_a * u) / (std::complex<T>(2) * r1 * r1);
-  auto aa2 = (r2 * a * u + squared_a * u) / (std::complex<T>(2) * r2 * r2);
-  return {{r1, aa}, {r2, aa2}};
+  auto v1 = (r1 * a * u + squared_a * u) / (std::complex<T>(2) * r1 * r1);
+  auto v2 = (r2 * a * u + squared_a * u) / (std::complex<T>(2) * r2 * r2);
+  return {{r1, v1}, {r2, v2}};
 }
 
 template<class T>
@@ -157,11 +157,6 @@ std::vector<std::pair<std::complex<T>,
   }
   auto squared_a = a * a;
   int n = a.Rows();
-
-  auto m2_y = Matrix<T>(n, 1);
-  m2_y(0) = 1;
-  auto m2_u = m2_y / EuclideanNorm<T>(m2_y);
-  auto m2_lambda = m2_u.ScalarProduct(a * m2_u);
 
   Matrix<std::complex<T>> complex_a(a.Rows(), a.Cols());
   Matrix<std::complex<T>> complex_squared_a(a.Rows(), a.Cols());
@@ -193,9 +188,5 @@ std::vector<std::pair<std::complex<T>,
     std::cerr << error1 << ' ' << error2 << '\n';
     std::cerr << "---------\n";
   }
-  // std::cerr << std::sqrt(m2_lambda) << '\n';
-  // std::cerr << aa / EuclideanNorm<T>(aa);
-  // std::cerr << aa2 / EuclideanNorm<T>(aa2);
   return {};
 }
-
