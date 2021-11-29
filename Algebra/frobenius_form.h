@@ -30,7 +30,7 @@ Matrix<T> FrobeniusForm(Matrix<T> a) {
     row = reindex[i];
     col = reindex[i - 1];
     if (std::abs(a(row, col)) < Matrix<T>::GetEps()) {
-      break;
+      continue;
     }
     auto d = a.Col(col)(row);
     a.Col(col).SubMatrix(0, 0, i + 1, -1) /= d;
