@@ -51,7 +51,7 @@ Matrix<T> FrobeniusForm(Matrix<T> a) {
         aa(k, j) = a(reindex[k], reindex[j]);
       }
     }
-    std::cerr << aa;
+    // std::cerr << aa;
     // break;
   }
   Matrix<T> aa(a.Rows(), a.Cols());
