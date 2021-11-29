@@ -32,8 +32,19 @@ PowerMethodEigenvaluesComplexIteration(
   auto c = MinimalSquareProblem(l, r);
   auto[r1, r2] = SolveQuadraticEquation<T>(1, c(1), c(0));
 
-  auto v1 = (r1 * a * u + squared_a * u) / (std::complex<T>(2) * r1 * r1);
-  auto v2 = (r2 * a * u + squared_a * u) / (std::complex<T>(2) * r2 * r2);
+  auto u1 = a * u;
+  auto u2 = squared_a * u;
+
+  Matrix<std::complex<T>> v1(u.Rows(), 1);
+  Matrix<std::complex<T>> v2(u.Rows(), 1);
+
+  for (int i = 0; i < u.Rows(); i++) {
+    v1(i) = u2(i) - r2 * u1(i);
+    v2(i) = u1(i) - u2(i) / r1;
+  }
+
+  // auto v1 = (r1 * a * u + squared_a * u) / (std::complex<T>(2) * r1 * r1);
+  // auto v2 = (r2 * a * u + squared_a * u) / (std::complex<T>(2) * r2 * r2);
   return {{r1, v1}, {r2, v2}};
 }
 
@@ -75,7 +86,7 @@ std::vector<std::pair<std::complex<T>,
 
   int iter = 0;
 
-  while (error1 > Matrix<T>::GetEps() &&
+  while (error1 > Matrix<T>::GetEps() ||
          error2 > Matrix<T>::GetEps()) {
     auto[p1, p2] = __internal::PowerMethodEigenvaluesComplexIteration(
         complex_a, complex_squared_a, complex_y, complex_u);
@@ -90,7 +101,7 @@ std::vector<std::pair<std::complex<T>,
     iter++;
     if (iter > max_iters && std::abs(error1 - error2) < Matrix<T>::GetEps()) {
       std::cerr << error1 << ' ' << error2 << '\n';
-      error1 = error2 = 0;
+      break;
     }
   }
 
@@ -101,7 +112,7 @@ std::vector<std::pair<std::complex<T>,
     }
   }
 
-  // std::cerr << error1 << ' ' << error2 << '\n';
+  std::cerr << error1 << ' ' << error2 << '\n';
 
   std::vector<std::pair<std::complex<T>,
                         Matrix<std::complex<T>>>> ans;
