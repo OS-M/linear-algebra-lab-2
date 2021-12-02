@@ -43,8 +43,6 @@ PowerMethodEigenvaluesComplexIteration(
     v2(i) = u1(i) - u2(i) / r1;
   }
 
-  // auto v1 = (r1 * a * u + squared_a * u) / (std::complex<T>(2) * r1 * r1);
-  // auto v2 = (r2 * a * u + squared_a * u) / (std::complex<T>(2) * r2 * r2);
   return {{r1, v1}, {r2, v2}};
 }
 
@@ -87,7 +85,7 @@ std::vector<std::pair<std::complex<T>,
   int iter = 0;
 
   while (error1 > Matrix<T>::GetEps() ||
-         error2 > Matrix<T>::GetEps()) {
+      error2 > Matrix<T>::GetEps()) {
     auto[p1, p2] = __internal::PowerMethodEigenvaluesComplexIteration(
         complex_a, complex_squared_a, complex_y, complex_u);
     r1 = p1.first;
@@ -112,14 +110,18 @@ std::vector<std::pair<std::complex<T>,
     }
   }
 
-  std::cerr << error1 << ' ' << error2 << '\n';
+  // std::cerr << error1 << ' ' << error2 << '\n';
 
   std::vector<std::pair<std::complex<T>,
                         Matrix<std::complex<T>>>> ans;
-  if (error1 < Matrix<T>::GetEps()) {
+  if (error1 < Matrix<T>::GetEps()
+      && std::norm(EuclideanNorm<std::complex<T>>(v1))
+          > std::norm(Matrix<std::complex<T>>::GetEps())) {
     ans.emplace_back(r1, v1);
   }
-  if (error2 < Matrix<T>::GetEps()) {
+  if (error2 < Matrix<T>::GetEps()
+      && std::norm(EuclideanNorm<std::complex<T>>(v2))
+          > std::norm(Matrix<std::complex<T>>::GetEps())) {
     ans.emplace_back(r2, v2);
   }
   return ans;

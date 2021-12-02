@@ -15,8 +15,11 @@ Matrix<T> QrHessenberg(Matrix<T> a) {
     auto old_col_vector = col_vector;
     col_vector(0) = (col_vector(0) < 0 ? 1 : -1) * EuclideanNorm<T>(col_vector);
     col_vector.SubMatrix(1, 0, -1, 1) *= 0;
-    auto w = (old_col_vector - col_vector)
-        / EuclideanNorm<T>(old_col_vector - col_vector);
+    auto norm = EuclideanNorm<T>(old_col_vector - col_vector);
+    if (norm < Matrix<T>::GetEps()) {
+      continue;
+    }
+    auto w = (old_col_vector - col_vector) / norm;
 
     for (int j = i + 1; j < n; j++) {  // for columns
       auto cur_col_vector = a.SubMatrix(i + 1, j, -1, 1);

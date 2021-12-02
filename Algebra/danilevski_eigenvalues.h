@@ -22,7 +22,7 @@ std::vector<T> DanilevskiPolynomial(const Matrix<T>& a) {
 }
 
 template<class T>
-std::vector<std::vector<T>> DanilevskiPolynomial(Matrix<T>& a) {
+std::vector<std::vector<T>> DanilevskiPolynomial(Matrix<T> a) {
   int last = 0;
   std::vector<std::vector<T>> ans;
   auto n = a.Rows();

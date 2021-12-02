@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Matrix/matrix.h"
+#include "Algebra/qr_decompose.h"
 
 template<class T>
 Matrix<T> MinimalSquareProblem(const Matrix<T>& a, const Matrix<T>& b) {
