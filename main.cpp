@@ -10,10 +10,18 @@
 #include "Algebra/frobenius_form.h"
 #include "Algebra/polynomial.h"
 #include "Algebra/danilevski_eigenvalues.h"
+#include "Algebra/polynomial_roots.h"
 
 int main() {
   Matrix<double>::SetEps(1e-6, 6);
   Matrix<std::complex<double>>::SetEps(std::complex<double>(1e-6, 1e-6), 6);
+
+  Polynomial<double> p{5, 7, 2, 3};
+  std::cout << ValueIn(p, 2.) << '\n';
+  std::cout << PolynomialToString(p);
+  std::cout << PolynomialToString(Derivative(p));
+  std::cout << FindRoots(p, 1e-6)[0];
+  return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);

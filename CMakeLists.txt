@@ -42,4 +42,4 @@ set(UBSAN_FLAGS
 # Build Types
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${ASAN_FLAGS}")
 
-add_executable(linear_algebra_lab_2 main.cpp Matrix/matrix.h Algebra/gauss.h Algebra/gauss_back_substitution.h Algebra/euclidean_norm.h Algebra/qr_hessenberg.h Algebra/qr_algorithm.h Algebra/rotations.h Algebra/power_iteration_method.h Algebra/qr_decompose.h Algebra/minimal_square_problem.h Algebra/eigenvalues.h Algebra/frobenius_form.h Algebra/polynomial.h Algebra/danilevski_eigenvalues.h)
+add_executable(linear_algebra_lab_2 main.cpp Matrix/matrix.h Algebra/gauss.h Algebra/gauss_back_substitution.h Algebra/euclidean_norm.h Algebra/qr_hessenberg.h Algebra/qr_algorithm.h Algebra/rotations.h Algebra/power_iteration_method.h Algebra/qr_decompose.h Algebra/minimal_square_problem.h Algebra/eigenvalues.h Algebra/frobenius_form.h Algebra/polynomial.h Algebra/danilevski_eigenvalues.h Algebra/polynomial_roots.h)
