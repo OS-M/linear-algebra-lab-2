@@ -18,6 +18,19 @@ Polynomial<T> PolynomialMultiply(const Polynomial<T>& a,
 }
 
 template<class T>
+Polynomial<T> PolynomialMultiply(const std::vector<Polynomial<T>>& v) {
+  if (v.empty()) {
+    return {};
+  }
+  auto ans = v[0];
+  for (int i = 1; i < v.size(); i++) {
+    ans = PolynomialMultiply(ans, v[i]);
+  }
+  return ans;
+}
+
+
+template<class T>
 std::string PolynomialToString(const Polynomial<T>& a,
                                const std::string& x = "x") {
   std::stringstream ss;

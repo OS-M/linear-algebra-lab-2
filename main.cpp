@@ -89,6 +89,68 @@ void Task1(double min, double max, int seed) {
   }
 }
 
+template<class T>
+void TestQrAlgorithm(const Matrix<T>& a) {
+  std::cout << "Qr algorithm eigenvalues:\n";
+  int iters = 0;
+  auto qr_ans = QrAlgorithm(QrHessenberg(a), &iters, 12000);
+  std::vector<std::complex<double>> complex_roots;
+  complex_roots.reserve(qr_ans.size());
+  for (auto r: qr_ans) {
+    complex_roots.emplace_back(r);
+  }
+  auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
+  for (int i = 0; i < vectors.size(); ++i) {
+    std::cout << qr_ans[i] << '\n';
+    std::cout << vectors[i];
+    std::cout << "Norm: " <<
+              std::abs(EuclideanNorm<std::complex<T>>(
+                  a.ToComplex() * vectors[i] - qr_ans[i] * vectors[i]));
+    std::cout << "\n#########\n";
+  }
+  std::cout << "Iters: " << iters << "\n===================\n\n\n";
+}
+
+template<class T>
+void TestPowerMethod(const Matrix<T>& a) {
+  int iters = 0;
+  auto ans = PowerMethodEigenvalues(a, &iters, 1000);
+  std::cout << "Power iteration eigenvalues and eigenvectors:\n";
+  for (auto[e, v]: ans) {
+    std::cout << e << '\n' << v;
+    std::cout << "Norm: " <<
+              std::abs(EuclideanNorm<std::complex<T>>(
+                  a.ToComplex() * v - e * v));
+    std::cout << "\n#########\n";
+  }
+  std::cout << "Iters: " << iters << "\n===================\n\n\n";
+}
+
+template<class T>
+void TestDanilevskiMethod(const Matrix<T>& a) {
+  auto polynomial = PolynomialMultiply(DanilevskiPolynomial(FrobeniusForm(a)));
+
+  std::cout << "Danilevski Polynomial: " << PolynomialToString(polynomial);
+
+  auto roots = FindRoots(polynomial, 1e-6);
+  std::vector<std::complex<double>> complex_roots;
+  complex_roots.reserve(roots.size());
+  for (auto r: roots) {
+    complex_roots.emplace_back(r);
+  }
+
+  auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
+  for (int i = 0; i < vectors.size(); ++i) {
+    std::cout << roots[i] << '\n';
+    std::cout << vectors[i];
+    std::cout << "Norm: " <<
+              std::abs(EuclideanNorm<std::complex<T>>(
+                  a.ToComplex() * vectors[i] - roots[i] * vectors[i]));
+    std::cout << "\n#########\n";
+  }
+  std::cout << "===================\n\n\n";
+}
+
 int main() {
   Matrix<double>::SetEps(1e-6, 6);
   Matrix<std::complex<double>>::SetEps(std::complex<double>(1e-6, 1e-6), 6);
@@ -102,6 +164,33 @@ int main() {
   //   return 0;
   // }
   // Task1(-100, 100, 228);
+
+  {
+    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
+    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
+    auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
+    // a = DMatrix{{1, 1, 1, 1, 1},
+    //             {1, 1, 1, 1, 1},
+    //             {0, 0, 1, 0, 0},
+    //             {0, 0, 1, 0, 0},
+    //             {0, 0, 0, 1, 0}};
+
+    int k = 2;
+    // a(0, 0) = 5 * (k + 1);
+    // a(0, 1) = 4 * (k + 1);
+    // a(0, 2) = -2 * (1 + k);
+    // a(1, 0) = -6 - 5 * k;
+    // a(1, 1) = -5 - 4 * k;
+    // a(1, 2) = 2 * (1 + k);
+    // a(2, 0) = 2 * k;
+    // a(2, 1) = 2 * k;
+    // a(2, 2) = -1 - k;
+
+    TestQrAlgorithm(a);
+    TestPowerMethod(a);
+    TestDanilevskiMethod(a);
+  }
+  return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
