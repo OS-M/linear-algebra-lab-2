@@ -32,25 +32,31 @@ Matrix<T> FrobeniusForm(Matrix<T> a) {
     if (std::abs(a(row, col)) < Matrix<T>::GetEps()) {
       continue;
     }
-    auto d = a.Col(col)(row);
-    a.Col(col).SubMatrix(0, 0, i + 1, -1) /= d;
+    auto d = a(row, col);
+    for (int j = 0; j < i + 1; j++) {
+      a(reindex[j], col) /= d;
+    }
     a.Row(col) *= d;
+
     for (int j = 0; j < n; j++) {
       auto index = reindex[j];
       if (col == index) {
         continue;
       }
       auto d = a.Col(index)(row);
-      a.Col(index).SubMatrix(0, 0, i + 1, -1) -=
-          a.Col(col).SubMatrix(0, 0, i + 1, -1) * d;
-      a.Row(col) += a.Row(index) * d;
-    }
-    Matrix<T> aa(a.Rows(), a.Cols());
-    for (int k = 0; k < n; k++) {
-      for (int j = 0; j < n; j++) {
-        aa(k, j) = a(reindex[k], reindex[j]);
+      for (int k = 0; k < i + 1; k++) {
+        a(reindex[k], index) -= a(reindex[k], col) * d;
+      }
+      for (int k = 0; k < n; k++) {
+        a(col, reindex[k]) += a(index, reindex[k]) * d;
       }
     }
+    // Matrix<T> aa(a.Rows(), a.Cols());
+    // for (int k = 0; k < n; k++) {
+    //   for (int j = 0; j < n; j++) {
+    //     aa(k, j) = a(reindex[k], reindex[j]);
+    //   }
+    // }
     // std::cerr << aa;
     // break;
   }

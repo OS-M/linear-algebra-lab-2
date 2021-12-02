@@ -48,3 +48,13 @@ T ValueIn(const Polynomial<T>& a, T x) {
   }
   return ans;
 }
+
+template<class T>
+void Normalize(Polynomial<T>& a) {
+  auto max = std::abs(*std::max_element(a.begin(), a.end(), [] (T a, T b) {
+    return std::abs(a) < std::abs(b);
+  })) / 1e6;
+  for (auto& it: a) {
+    it /= max;
+  }
+}

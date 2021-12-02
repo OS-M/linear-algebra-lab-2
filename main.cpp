@@ -104,8 +104,9 @@ int main() {
   // Task1(-100, 100, 228);
 
   {
-    auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
+    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
+    auto a = DMatrix::Random(5, 5, -5, 10, 12313);
     // a = DMatrix{{1, 1, 1, 1, 1},
     //             {1, 1, 1, 1, 1},
     //             {0, 0, 1, 0, 0},
@@ -124,12 +125,14 @@ int main() {
     // a(2, 2) = -1 - k;
 
     std::cout << a << a.ToWolframString();
+    std::cout << FrobeniusForm(a).ToWolframString();
     auto p = DanilevskiPolynomial(FrobeniusForm(a));
     std::vector<double> full_p(1, 1);
     for (auto p_: p) {
       // std::cout << PolynomialToString(p_);
       full_p = PolynomialMultiply(full_p, p_);
     }
+    // Normalize(full_p);
     std::cout << PolynomialToString(full_p);
     for (auto r: FindRoots(full_p, 1e-6)) {
       std::cout << r << '\n';

@@ -15,12 +15,12 @@ std::optional<T> RefineRootNewton(const Polynomial <T>& a,
                                   int max_iters) {
   for (int i = 0; i < max_iters; ++i) {
     auto f_x = ValueIn(a, x);
-    auto der_x = ValueIn(der, x);
-    x -= f_x / der_x;
     if (std::abs(f_x) < eps) {
       // std::cerr << i << '\n';
       return x;
     }
+    auto der_x = ValueIn(der, x);
+    x -= f_x / der_x;
   }
   return {};
 }
@@ -67,6 +67,7 @@ std::vector<T> FindRoots(const Polynomial <T>& a, T eps) {
     return {-a[1] / a[0]};
   }
   auto der = Derivative(a);
+  Normalize(der);
   std::vector<T> extremums{-1e18};
   for (auto it: FindRoots(der, eps)) {
     extremums.push_back(it);
@@ -76,7 +77,7 @@ std::vector<T> FindRoots(const Polynomial <T>& a, T eps) {
   for (int i = 1; i < extremums.size(); i++) {
     auto root = __internal::FindRootBinSearch(a,
                                               extremums[i - 1],
-                                              extremums[i], 1.);
+                                              extremums[i], eps);
     if (root.has_value()) {
       root = __internal::RefineRootNewton(a, der, root.value(), eps, 1e2);
       if (root.has_value()) {
