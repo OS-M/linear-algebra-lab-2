@@ -8,35 +8,52 @@ namespace __internal {
 
 template<class T>
 std::vector<T> FindRootsOfOddPolynomial(Polynomial<T> a, T eps) {
-  T l = -1e18;
-  T r = 1e18;
-  if (ValueIn(a, l) > ValueIn(a, r)) {
-    for (auto& it: a) {
-      it *= -1;
-    }
-  }
-  while (std::abs(l - r) > eps) {
-    T mid = (l + r) / 2.;
-    auto val = ValueIn(a, mid);
-    if (std::abs(val) < eps) {
-      break;
-    }
-    if (val < 0) {
-      l = mid;
-    } else {
-      r = mid;
-    }
-  }
-  return {(l + r) / 2.};
+  return {};
 }
 
 }
 
 template<class T>
 std::vector<T> FindRoots(const Polynomial<T>& a, T eps) {
-  if (a.size() % 2 == 0) {
-    return __internal::FindRootsOfOddPolynomial(a, eps);
+  if (a.size() == 2) {
+    return {-a[1] / a[0]};
   }
-  auto extremums = __internal::FindRootsOfOddPolynomial(Derivative(a), eps);
-  return {};
+  auto der = Derivative(a);
+  std::vector<T> extremums{-1e18};
+  for (auto it: FindRoots(der, eps)) {
+    extremums.push_back(it);
+  }
+  extremums.push_back(1e18);
+  std::vector<T> ans;
+  for (int i = 1; i < extremums.size(); i++) {
+    auto l = extremums[i - 1];
+    auto r = extremums[i];
+    bool rising = ValueIn(a, l) < ValueIn(a, r);
+    while (!(std::abs(l - extremums[i]) < eps ||
+        std::abs(r - extremums[i - 1]) < eps)) {
+      T mid = (l + r) / 2.;
+      auto val = ValueIn(a, mid);
+      if (std::abs(val) < eps) {
+        break;
+      }
+      if (rising) {
+        if (val < 0) {
+          l = mid;
+        } else {
+          r = mid;
+        }
+      } else {
+        if (val < 0) {
+          r = mid;
+        } else {
+          l = mid;
+        }
+      }
+    }
+    auto val = ValueIn(a, (l + r) / 2);
+    if (std::abs(ValueIn(a, (l + r) / 2)) < eps) {
+      ans.push_back((l + r) / 2);
+    }
+  }
+  return ans;
 }
