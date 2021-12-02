@@ -10,6 +10,9 @@ std::pair<T, T> GetRotationMatrix(const Matrix<T>& a) {
   }
   Matrix<T> ans(2);
   auto sqrt = std::sqrt(a(0) * a(0) + a(1) * a(1));
+  if (sqrt < Matrix<T>::GetEps()) {
+    return {0, 1};
+  }
   auto cos = a(0) / sqrt;
   auto sin = a(1) / sqrt;
   return {sin, cos};

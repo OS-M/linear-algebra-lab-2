@@ -30,7 +30,8 @@ PowerMethodEigenvaluesComplexIteration(
     r(i) = rc(i).real();
   }
   auto c = MinimalSquareProblem(l, r);
-  auto[r1, r2] = SolveQuadraticEquation<T>(1, c(1), c(0));
+  auto[r1, r2] =
+    SolveQuadraticEquation<T>(1, c(1), c(0));
 
   auto u1 = a * u;
   auto u2 = squared_a * u;
@@ -46,11 +47,130 @@ PowerMethodEigenvaluesComplexIteration(
   return {{r1, v1}, {r2, v2}};
 }
 
+template<class T>
+T PowerIterationMethod1Iteration(
+    const Matrix<T>& a,
+    Matrix<T>& u,
+    Matrix<T>& y) {
+  y.Assign(a * u);
+  u.Assign(y / EuclideanNorm<T>(y));
+  auto lambda = (u.ScalarProduct(a * u));
+  return lambda;
+}
+
+template<class T>
+std::pair<bool, Matrix<T>> PowerIterationMethod1IterationConverges(
+    const Matrix<T>& a,
+    int iters = 10) {
+  int n = a.Rows();
+  auto y = Matrix<T>(n, 1);
+  y(0) = 1;
+  auto u = y / EuclideanNorm<T>(y);
+  auto lambda = u.ScalarProduct(a * u);
+  auto prev_lambda = lambda;
+  auto prev_diff = 1e18;
+  for (int i = 0; i < iters; i++) {
+    lambda = __internal::PowerIterationMethod1Iteration(a, u, y);
+    if (std::abs(prev_lambda - lambda) <= prev_diff) {
+      prev_diff = std::abs(prev_lambda - lambda);
+      prev_lambda = lambda;
+      continue;
+    } else {
+      return {false, y};
+    }
+  }
+  return {true, y};
+}
+
+template<class T>
+T PowerIterationMethod2Iteration(
+    const Matrix<T>& a,
+    const Matrix<T>& a2,
+    Matrix<T>& u,
+    Matrix<T>& y) {
+  y.Assign(a2 * u);
+  u.Assign(y / EuclideanNorm<T>(y));
+  auto lambda = (u.ScalarProduct(a2 * u));
+  return lambda;
+}
+
+template<class T>
+std::pair<bool, Matrix<T>> PowerIterationMethod2IterationConverges(
+    const Matrix<T>& a,
+    const Matrix<T>& a2,
+    int iters = 10) {
+  int n = a.Rows();
+  auto y = Matrix<T>(n, 1);
+  y(0) = 1;
+  auto u = y / EuclideanNorm<T>(y);
+  auto lambda = u.ScalarProduct(a * u);
+  auto prev_lambda = lambda;
+  auto prev_diff = 1e18;
+  for (int i = 0; i < iters; i++) {
+    lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
+    if (lambda > 0 && std::abs(prev_lambda - lambda) <= prev_diff) {
+      prev_diff = std::abs(prev_lambda - lambda);
+      prev_lambda = lambda;
+      continue;
+    } else {
+      return {false, y};
+    }
+  }
+  return {true, y};
+}
+
+template<class T>
+std::pair<T, Matrix<T>> PowerMethodEigenvalues1(
+    const Matrix<T>& a,
+    Matrix<T> y,
+    int* iters = nullptr,
+    int max_iters = 100) {
+  if (!a.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(a.Size()) + " is not square.");
+  }
+  int n = a.Rows();
+  y(0) = 1;
+  auto u = y / EuclideanNorm<T>(y);
+  auto lambda = u.ScalarProduct(a * u);
+  while (EuclideanNorm<T>(a * u - lambda * u) > Matrix<T>::GetEps()) {
+    lambda = __internal::PowerIterationMethod1Iteration(a, u, y);
+  }
+  return {lambda, u};
 }
 
 template<class T>
 std::vector<std::pair<std::complex<T>,
-                      Matrix<std::complex<T>>>> PowerMethodEigenvalues(
+                      Matrix<std::complex<T>>>> PowerMethodEigenvalues2(
+    const Matrix<T>& a,
+    Matrix<T> y,
+    int* iters = nullptr,
+    int max_iters = 100) {
+  if (!a.IsSquare()) {
+    throw std::invalid_argument(
+        "Matrix of size " + PairToString(a.Size()) + " is not square.");
+  }
+  auto a2 = a * a;
+  int n = a.Rows();
+  auto u = y / EuclideanNorm<T>(y);
+  auto lambda = u.ScalarProduct(a * u);
+  auto v1 = u;
+  auto v2 = u;
+  while (
+      EuclideanNorm<T>(a * v1 - std::sqrt(lambda) * v1) > Matrix<T>::GetEps() ||
+      EuclideanNorm<T>(a * v2 + std::sqrt(lambda) * v2) > Matrix<T>::GetEps()) {
+    lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
+    v1 = (std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
+    v2 = (-std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
+  }
+
+  return {std::make_pair(std::sqrt(lambda), v1.ToComplex()),
+          std::make_pair(-std::sqrt(lambda), v2.ToComplex())};
+}
+
+template<class T>
+std::vector<std::pair<std::complex<T>,
+                      Matrix<std::complex<T>>>> PowerMethodEigenvalues3(
     const Matrix<T>& a,
     int* iters = nullptr,
     int max_iters = 100) {
@@ -61,14 +181,8 @@ std::vector<std::pair<std::complex<T>,
   auto squared_a = a * a;
   int n = a.Rows();
 
-  Matrix<std::complex<T>> complex_a(a.Rows(), a.Cols());
-  Matrix<std::complex<T>> complex_squared_a(a.Rows(), a.Cols());
-  for (int i = 0; i < a.Rows(); i++) {
-    for (int j = 0; j < a.Cols(); j++) {
-      complex_a(i, j) = a(i, j);
-      complex_squared_a(i, j) = squared_a(i, j);
-    }
-  }
+  auto complex_a = a.ToComplex();
+  auto complex_squared_a = squared_a.ToComplex();
 
   Matrix<std::complex<T>> complex_y(n, 1);
   complex_y(0) = 1;
@@ -86,7 +200,8 @@ std::vector<std::pair<std::complex<T>,
 
   while (error1 > std::norm(Matrix<T>::GetEps()) ||
       error2 > std::norm(Matrix<T>::GetEps())) {
-    auto[p1, p2] = __internal::PowerMethodEigenvaluesComplexIteration(
+    auto[p1, p2] =
+    __internal::PowerMethodEigenvaluesComplexIteration(
         complex_a, complex_squared_a, complex_y, complex_u);
     r1 = p1.first;
     v1 = p1.second;
@@ -125,4 +240,34 @@ std::vector<std::pair<std::complex<T>,
     ans.emplace_back(r2, v2);
   }
   return ans;
+}
+
+}
+
+template<class T>
+std::vector<std::pair<std::complex<T>,
+                      Matrix<std::complex<T>>>> PowerMethodEigenvalues(
+    const Matrix<T>& a,
+    int* iters = nullptr,
+    int max_iters = 100) {
+  {
+    auto[is_converging, y] =
+      __internal::PowerIterationMethod1IterationConverges(a);
+    if (is_converging) {
+      auto[e, v] =
+        __internal::PowerMethodEigenvalues1(a, y, iters, max_iters);
+      std::cerr << "Method 1\n";
+      return {std::make_pair(e, v.ToComplex())};
+    }
+  }
+  {
+    auto[is_converging, y] =
+      __internal::PowerIterationMethod2IterationConverges(a, a * a);
+    if (is_converging) {
+      std::cerr << "Method 2\n";
+      return __internal::PowerMethodEigenvalues2(a, y, iters, max_iters);
+    }
+  }
+  std::cerr << "Method 3\n";
+  return __internal::PowerMethodEigenvalues3(a, iters, max_iters);
 }

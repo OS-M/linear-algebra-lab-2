@@ -4,7 +4,7 @@
 #include "euclidean_norm.h"
 
 template<class T>
-Matrix<T> QrHessenberg(Matrix<T> a) {
+Matrix<T> ReflectionsHessenberg(Matrix<T> a) {
   if (!a.IsSquare()) {
     throw std::invalid_argument(
         "Matrix of size " + PairToString(a.Size()) + " is not square.");

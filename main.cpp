@@ -2,7 +2,7 @@
 #include "Matrix/matrix.h"
 #include "Algebra/gauss.h"
 #include "Algebra/euclidean_norm.h"
-#include "Algebra/qr_hessenberg.h"
+#include "Algebra/reflections_hessenberg.h"
 #include "Algebra/qr_algorithm.h"
 #include "Algebra/power_iteration_method.h"
 #include "Algebra/qr_decompose.h"
@@ -93,7 +93,7 @@ template<class T>
 void TestQrAlgorithm(const Matrix<T>& a) {
   std::cout << "Qr algorithm eigenvalues:\n";
   int iters = 0;
-  auto qr_ans = QrAlgorithm(QrHessenberg(a), &iters, 12000);
+  auto qr_ans = QrAlgorithm(ReflectionsHessenberg(a), &iters, 12000);
   std::vector<std::complex<double>> complex_roots;
   complex_roots.reserve(qr_ans.size());
   for (auto r: qr_ans) {
@@ -102,10 +102,12 @@ void TestQrAlgorithm(const Matrix<T>& a) {
   auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
   for (int i = 0; i < vectors.size(); ++i) {
     std::cout << qr_ans[i] << '\n';
-    std::cout << vectors[i];
-    std::cout << "Norm: " <<
-              std::abs(EuclideanNorm<std::complex<T>>(
-                  a.ToComplex() * vectors[i] - qr_ans[i] * vectors[i]));
+    if (vectors[i].Rows() != 0) {
+      std::cout << vectors[i];
+      std::cout << "Norm: " <<
+                std::abs(EuclideanNorm<std::complex<T>>(
+                    a.ToComplex() * vectors[i] - qr_ans[i] * vectors[i]));
+    }
     std::cout << "\n#########\n";
   }
   std::cout << "Iters: " << iters << "\n===================\n\n\n";
@@ -141,6 +143,9 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
 
   auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
   for (int i = 0; i < vectors.size(); ++i) {
+    if (vectors[i].Rows() == 0) {
+      continue;
+    }
     std::cout << roots[i] << '\n';
     std::cout << vectors[i];
     std::cout << "Norm: " <<
@@ -166,14 +171,17 @@ int main() {
   // Task1(-100, 100, 228);
 
   {
-    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
+    auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
-    auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
+    // auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
+    // auto a = DMatrix::Random(5, 5, -5, 10, 456468);
     // a = DMatrix{{1, 1, 1, 1, 1},
     //             {1, 1, 1, 1, 1},
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 0, 1, 0}};
+
+    a = Matrix1();
 
     int k = 2;
     // a(0, 0) = 5 * (k + 1);
@@ -186,9 +194,11 @@ int main() {
     // a(2, 1) = 2 * k;
     // a(2, 2) = -1 - k;
 
+    std::cout << a << "\n\n";
+
     TestQrAlgorithm(a);
-    TestPowerMethod(a);
     TestDanilevskiMethod(a);
+    TestPowerMethod(a);
   }
   return 0;
 
@@ -245,7 +255,7 @@ int main() {
     }
     std::cout << "Iters: " << iters << '\n';
     std::cout << "Qr:\n";
-    auto qr_ans = QrAlgorithm(QrHessenberg(a), &iters, 12000);
+    auto qr_ans = QrAlgorithm(ReflectionsHessenberg(a), &iters, 12000);
     for (auto val: qr_ans) {
       std::cout << val << '\n';
     }
@@ -312,7 +322,7 @@ int main() {
     }
     std::cout << "Iters: " << iters << '\n';
     std::cout << "Qr:\n";
-    auto qr_ans = QrAlgorithm(QrHessenberg(a), &iters, 12000);
+    auto qr_ans = QrAlgorithm(ReflectionsHessenberg(a), &iters, 12000);
     for (auto val: qr_ans) {
       std::cout << val << '\n';
     }
@@ -330,7 +340,7 @@ int main() {
     // std::cout << x << a * x;
 
     std::cout << a << a.ToWolframString();
-    auto qr = QrHessenberg(a);
+    auto qr = ReflectionsHessenberg(a);
     std::cout << qr << qr.ToWolframString();
     int iters = 0;
     auto values = QrAlgorithm(qr, &iters);

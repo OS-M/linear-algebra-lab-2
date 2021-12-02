@@ -2,6 +2,7 @@
 
 #include "Matrix/matrix.h"
 #include "gauss.h"
+#include "lu_decompose.h"
 
 template<class T>
 std::pair<std::complex<T>, std::complex<T>> SolveQuadraticEquation(
@@ -30,6 +31,9 @@ std::vector<Matrix<std::complex<T>>> FindEigenvectorsByValues(
   Matrix<std::complex<T>> a(matrix.Rows(), matrix.Cols());
   Matrix<std::complex<T>> b(matrix.Rows(), 1);
   std::vector<Matrix<std::complex<T>>> ans;
+
+  // auto[l, u] = LuDecompose(a);
+
   for (auto value: values) {
     for (int i = 0; i < matrix.Rows(); i++) {
       for (int j = 0; j < matrix.Cols(); j++) {
@@ -39,7 +43,13 @@ std::vector<Matrix<std::complex<T>>> FindEigenvectorsByValues(
         }
       }
     }
-    ans.push_back(GaussSolve(a, b).first);
+    auto x = GaussSolve(a, b).first;
+    if (std::abs(EuclideanNorm<std::complex<T>>(x)) >
+          std::abs(Matrix<std::complex<T>>::GetEps())) {
+      ans.push_back(x);
+    } else {
+      ans.push_back(Matrix<std::complex<T>>(0, 0));
+    }
   }
   return ans;
 }
