@@ -49,8 +49,10 @@ Matrix SolveUxb(const Matrix& u,
     for (int j = x.Rows() - 1; j > i; j--) {
       sum -= x.At(j, 0) * u.At(i, j);
     }
-    if (std::abs(u.At(i, i)) >= Matrix::GetEps()) {
+    if (std::abs(u.At(i, i)) >= std::abs(Matrix::GetEps())) {
       x.At(i, 0) = sum / u.At(i, i);
+    } else {
+      x.At(i, 0) = 1;
     }
   }
   return x;

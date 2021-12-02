@@ -92,12 +92,12 @@ std::vector<std::pair<std::complex<T>,
     v1 = p1.second;
     r2 = p2.first;
     v2 = p2.second;
-    error1 = std::sqrt(std::norm(
-        EuclideanNorm<std::complex<T>>(complex_a * v1 - r1 * v1)));
-    error2 = std::sqrt(std::norm(
-        EuclideanNorm<std::complex<T>>(complex_a * v2 - r2 * v2)));
+    error1 = std::norm(
+        EuclideanNorm<std::complex<T>>(complex_a * v1 - r1 * v1));
+    error2 = std::norm(
+        EuclideanNorm<std::complex<T>>(complex_a * v2 - r2 * v2));
     iter++;
-    if (iter > max_iters && std::abs(error1 - error2) < Matrix<T>::GetEps()) {
+    if (iter > max_iters) {
       std::cerr << error1 << ' ' << error2 << '\n';
       break;
     }

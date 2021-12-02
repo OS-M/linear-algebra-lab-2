@@ -35,6 +35,8 @@ class Matrix {
 
   std::pair<int, int> Size() const;
 
+  Matrix<std::complex<T>> ToComplex() const;
+
   bool IsSquare() const;
 
   int Rows() const;
@@ -600,6 +602,17 @@ void Matrix<T>::Swap(Matrix<T>& b) {
   std::swap(rows_, b.rows_);
   std::swap(offset_i_, b.offset_i_);
   std::swap(offset_j_, b.offset_j_);
+}
+
+template<class T>
+Matrix<std::complex<T>> Matrix<T>::ToComplex() const {
+  Matrix<std::complex<T>> ans(this->Rows(), this->Cols());
+  for (int i = 0; i < this->Rows(); i++) {
+    for (int j = 0; j < this->Cols(); j++) {
+      ans.At(i, j) = this->At(i, j);
+    }
+  }
+  return ans;
 }
 
 template<class T, class U>

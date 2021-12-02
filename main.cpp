@@ -106,7 +106,7 @@ int main() {
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
-    auto a = DMatrix::Random(5, 5, -5, 10, 12313);
+    auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
     // a = DMatrix{{1, 1, 1, 1, 1},
     //             {1, 1, 1, 1, 1},
     //             {0, 0, 1, 0, 0},
@@ -125,6 +125,7 @@ int main() {
     // a(2, 2) = -1 - k;
 
     std::cout << a << a.ToWolframString();
+    auto complex_a = a.ToComplex();
     std::cout << FrobeniusForm(a).ToWolframString();
     auto p = DanilevskiPolynomial(FrobeniusForm(a));
     std::vector<double> full_p(1, 1);
@@ -134,8 +135,17 @@ int main() {
     }
     // Normalize(full_p);
     std::cout << PolynomialToString(full_p);
-    for (auto r: FindRoots(full_p, 1e-6)) {
-      std::cout << r << '\n';
+    std::vector<std::complex<double>> complex;
+    auto roots = FindRoots(full_p, 1e-6);
+    for (auto r: roots) {
+      complex.emplace_back(r);
+    }
+    auto vectors = FindEigenvectorsByValues(complex_a, complex);
+    for (int i = 0; i < vectors.size(); ++i) {
+      std::cout << roots[i] << '\n';
+      std::cout << vectors[i];
+      std::cout << EuclideanNorm<std::complex<double>>(
+          complex_a * vectors[i] - roots[i] * vectors[i]) << '\n';
     }
 
     int iters = 0;
