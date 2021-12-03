@@ -133,8 +133,19 @@ std::pair<T, Matrix<T>> PowerMethodEigenvalues1(
   y(0) = 1;
   auto u = y / EuclideanNorm<T>(y);
   auto lambda = u.ScalarProduct(a * u);
+  int iter = 0;
   while (EuclideanNorm<T>(a * u - lambda * u) > Matrix<T>::GetEps()) {
     lambda = __internal::PowerIterationMethod1Iteration(a, u, y);
+    iter++;
+    if (iter > max_iters) {
+      break;
+    }
+  }
+  if (iters) {
+    *iters = iter + 1;
+    if (iter >= max_iters) {
+      *iters = -1;
+    }
   }
   return {lambda, u};
 }
@@ -156,12 +167,23 @@ std::vector<std::pair<std::complex<T>,
   auto lambda = u.ScalarProduct(a * u);
   auto v1 = u;
   auto v2 = u;
+  int iter = 0;
   while (
       EuclideanNorm<T>(a * v1 - std::sqrt(lambda) * v1) > Matrix<T>::GetEps() ||
       EuclideanNorm<T>(a * v2 + std::sqrt(lambda) * v2) > Matrix<T>::GetEps()) {
     lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
     v1 = (std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
     v2 = (-std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
+    iter++;
+    if (iter > max_iters) {
+      break;
+    }
+  }
+  if (iters) {
+    *iters = iter + 1;
+    if (iter >= max_iters) {
+      *iters = -1;
+    }
   }
 
   return {std::make_pair(std::sqrt(lambda), v1.ToComplex()),
