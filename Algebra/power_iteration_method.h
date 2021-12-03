@@ -67,11 +67,11 @@ std::pair<bool, Matrix<T>> PowerIterationMethod1IterationConverges(
   y(0) = 1;
   auto u = y / EuclideanNorm<T>(y);
   auto lambda = u.ScalarProduct(a * u);
-  auto prev_lambda = lambda;
+  auto prev_lambda = 1e18;
   auto prev_diff = 1e18;
   for (int i = 0; i < iters; i++) {
     lambda = __internal::PowerIterationMethod1Iteration(a, u, y);
-    if (std::abs(prev_lambda - lambda) <= prev_diff) {
+    if (i < iters / 2 || std::abs(prev_lambda - lambda) <= prev_diff) {
       prev_diff = std::abs(prev_lambda - lambda);
       prev_lambda = lambda;
       continue;
@@ -104,11 +104,12 @@ std::pair<bool, Matrix<T>> PowerIterationMethod2IterationConverges(
   y(0) = 1;
   auto u = y / EuclideanNorm<T>(y);
   auto lambda = u.ScalarProduct(a * u);
-  auto prev_lambda = lambda;
+  auto prev_lambda = 1e18;
   auto prev_diff = 1e18;
   for (int i = 0; i < iters; i++) {
     lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
-    if (lambda > 0 && std::abs(prev_lambda - lambda) <= prev_diff) {
+    if (i < iters / 2 ||
+        (lambda > 0 && std::abs(prev_lambda - lambda) <= prev_diff)) {
       prev_diff = std::abs(prev_lambda - lambda);
       prev_lambda = lambda;
       continue;
