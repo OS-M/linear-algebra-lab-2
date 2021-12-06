@@ -116,10 +116,11 @@ void TestQrAlgorithm(const Matrix<T>& a) {
 template<class T>
 void TestPowerMethod(const Matrix<T>& a) {
   int iters = 0;
-  auto ans = PowerMethodEigenvalues(a, &iters, 1000);
+  auto ans = PowerMethodEigenvalues(a, &iters, 1000, 20, 3);
   std::cout << "Power iteration eigenvalues and eigenvectors:\n";
   for (auto[e, v]: ans) {
     std::cout << e << '\n' << v;
+    // std::cout << e << '\n';
     std::cout << "Norm: " <<
               std::abs(EuclideanNorm<std::complex<T>>(
                   a.ToComplex() * v - e * v));
@@ -172,32 +173,34 @@ int main() {
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
-    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
+    auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
     // auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
-    auto a = DMatrix::Random(5, 5, -5, 10, 456468);
+    // auto a = DMatrix::Random(5, 5, -5, 10, 456468);
     // a = DMatrix{{1, 1, 1, 1, 1},
     //             {1, 1, 1, 1, 1},
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 0, 1, 0}};
 
-    // a = Matrix1();
+    // a = DMatrix{{0, 1}, {1, 0}};
 
     int k = 2;
-    // a(0, 0) = 5 * (k + 1);
-    // a(0, 1) = 4 * (k + 1);
-    // a(0, 2) = -2 * (1 + k);
-    // a(1, 0) = -6 - 5 * k;
-    // a(1, 1) = -5 - 4 * k;
-    // a(1, 2) = 2 * (1 + k);
-    // a(2, 0) = 2 * k;
-    // a(2, 1) = 2 * k;
-    // a(2, 2) = -1 - k;
+    a(0, 0) = 5 * (k + 1);
+    a(0, 1) = 4 * (k + 1);
+    a(0, 2) = -2 * (1 + k);
+    a(1, 0) = -6 - 5 * k;
+    a(1, 1) = -5 - 4 * k;
+    a(1, 2) = 2 * (1 + k);
+    a(2, 0) = 2 * k;
+    a(2, 1) = 2 * k;
+    a(2, 2) = -1 - k;
+
+    // a = Matrix2();
 
     std::cout << a << "\n\n";
 
     TestQrAlgorithm(a);
-    TestDanilevskiMethod(a);
+    // TestDanilevskiMethod(a);
     TestPowerMethod(a);
   }
   return 0;
