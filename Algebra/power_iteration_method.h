@@ -181,10 +181,10 @@ std::vector<std::pair<std::complex<T>,
   v2 = (-lambda * a * u + a2 * u) / (2 * lambda * lambda);
 
   std::vector<std::pair<std::complex<T>, Matrix<std::complex<T>>>> ans;
-  if (EuclideanNorm<T>(v1) > 100 * eps) {
+  if (EuclideanNorm<T>(v1) > eps) {
     ans.emplace_back(lambda, v1.ToComplex());
   }
-  if (EuclideanNorm<T>(v2) > 100 * eps) {
+  if (EuclideanNorm<T>(v2) > eps) {
     ans.emplace_back(-lambda, v2.ToComplex());
   }
 
@@ -285,6 +285,9 @@ std::vector<std::pair<std::complex<T>,
     int check_iters = 10,
     int check_step = 5,
     int force_method = -1) {
+  if (iters) {
+    *iters = 0;
+  }
   if (force_method != -1) {
     Matrix<T> y(a.Rows(), 1);
     y(0) = 1;
@@ -311,11 +314,14 @@ std::vector<std::pair<std::complex<T>,
     int iters_ = 0;
     __internal::PowerMethodEigenvalues2(a, y, &iters_, max_iters, 0.1);
     if (iters_ >= 0) {
-      auto res =  __internal::PowerMethodEigenvalues2(a, y, iters, max_iters);
-      if (iters) {
-        *iters += iters_;
+      int iters__ = 0;
+      auto res = __internal::PowerMethodEigenvalues2(a, y, &iters__, max_iters);
+      if (iters__ >= 0 && !res.empty()) {
+        if (iters) {
+          *iters = iters_ + iters__;
+        }
+        return res;
       }
-      return res;
     }
   }
   // std::cerr << "Method 3\n";

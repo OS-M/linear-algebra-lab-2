@@ -72,8 +72,8 @@ void Task1(double min, double max, int seed) {
   //   std::cout << "Iters: " << iters << '\n';
   // }
 
-  std::vector<int> sizes{10, 50, 100, 200};
-  int tests_count = 12;
+  std::vector<int> sizes{10, 50, 100, 1000};
+  int tests_count = 10;
   int max_iter = 1e4;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
@@ -150,8 +150,8 @@ void Task1(double min, double max, int seed) {
 }
 
 void Task1_(double min, double max, int seed) {
-  std::vector<int> sizes{10, 50, 100, 200};
-  int tests_count = 12;
+  std::vector<int> sizes{10, 50, 100, 200, 500};
+  int tests_count = 10;
   int max_iter = 1e4;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
@@ -296,8 +296,10 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
 }
 
 int main() {
-  Matrix<double>::SetEps(1e-6, 6);
-  Matrix<std::complex<double>>::SetEps(std::complex<double>(1e-6, 1e-6), 6);
+  auto eps = 1e-6;
+  auto prec = 6;
+  Matrix<double>::SetEps(eps, prec);
+  Matrix<std::complex<double>>::SetEps(std::complex<double>(eps, eps), prec);
 
   // {
   //   Polynomial<double> a{1, 2, -3};
@@ -306,9 +308,9 @@ int main() {
   //   std::cout << PolynomialToString(DividePolynomial(a, b));
   //   return 0;
   // }
-  Task1_(-1000, 1000, 8917293);
-  // Task1(-1000, 1000, 8917293);
-  return 0;
+  Task1(-1e6, 1e6, 8917293);
+  // Task1_(-1000, 1000, 8917293);
+  // return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
@@ -322,18 +324,18 @@ int main() {
     //             {0, 0, 0, 1, 0}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
-    a = Matrix2();
+    a = Matrix1();
 
     int k = 2;
-    a(0, 0) = 5 * (k + 1);
-    a(0, 1) = 4 * (k + 1);
-    a(0, 2) = -2 * (1 + k);
-    a(1, 0) = -6 - 5 * k;
-    a(1, 1) = -5 - 4 * k;
-    a(1, 2) = 2 * (1 + k);
-    a(2, 0) = 2 * k;
-    a(2, 1) = 2 * k;
-    a(2, 2) = -1 - k;
+    // a(0, 0) = 5 * (k + 1);
+    // a(0, 1) = 4 * (k + 1);
+    // a(0, 2) = -2 * (1 + k);
+    // a(1, 0) = -6 - 5 * k;
+    // a(1, 1) = -5 - 4 * k;
+    // a(1, 2) = 2 * (1 + k);
+    // a(2, 0) = 2 * k;
+    // a(2, 1) = 2 * k;
+    // a(2, 2) = -1 - k;
 
     // a = Matrix2();
 

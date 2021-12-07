@@ -32,31 +32,5 @@ for plot in lines.strip().split("==="):
     plot_num += 1
     plt.legend()
 
-
-#
-# x = np.array(lines[0].strip().split(' '))
-# y = [np.array(x.strip().split(' '), dtype=float) for x in lines[2:]]
-# names = np.array(lines[1].split('/'))
-#
-#
-#
-# ax = fig.add_subplot(1, 2, 1)
-# ax.set_xticklabels([int(i) / 1000 for i in x])
-# ax.title.set_text('Prepare')
-# ax.plot(x, y[0], label=names[0])
-# ax.plot(x, y[1], label=names[1])
-# ax.set_xlabel("Matrix size (x1000)")
-# ax.set_ylabel("Duration, sec.")
-# plt.legend()
-#
-# ax = fig.add_subplot(1, 2, 2)
-# ax.set_xticklabels([int(i) / 1000 for i in x])
-# ax.title.set_text('Solve')
-# ax.plot(x, y[2], label=names[2])
-# ax.plot(x, y[3], label=names[3])
-# ax.set_xlabel("Matrix size (x1000)")
-# ax.set_ylabel("Duration, sec.")
-# plt.legend()
-#
-plt.show()
-# plt.savefig('task1.png')
+# plt.show()
+plt.savefig(sys.argv[1][:-4] + ".png")
