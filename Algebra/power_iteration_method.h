@@ -82,7 +82,7 @@ T PowerIterationMethod2Iteration(
     Matrix<T>& y) {
   y.Assign(a2 * u);
   u.Assign(y / EuclideanNorm<T>(y));
-  auto lambda = (u.ScalarProduct(a2 * u));
+  auto lambda = u.ScalarProduct(a2 * u);
   return lambda;
 }
 
@@ -152,9 +152,10 @@ template<class T>
 std::vector<std::pair<std::complex<T>,
                       Matrix<std::complex<T>>>> PowerMethodEigenvalues2(
     const Matrix<T>& a,
-    Matrix<T> y,
+    Matrix<T>& y,
     int* iters = nullptr,
-    int max_iters = 100) {
+    int max_iters = 100,
+    T eps = Matrix<T>::GetEps()) {
   if (!a.IsSquare()) {
     throw std::invalid_argument(
         "Matrix of size " + PairToString(a.Size()) + " is not square.");
@@ -162,21 +163,31 @@ std::vector<std::pair<std::complex<T>,
   auto a2 = a * a;
   int n = a.Rows();
   auto u = y / EuclideanNorm<T>(y);
-  auto lambda = u.ScalarProduct(a * u);
+  auto lambda = std::sqrt(std::abs(u.ScalarProduct(a2 * u)));
   auto v1 = u;
   auto v2 = u;
   int iter = 0;
   auto prev_lambda = 1e18;
-  while (std::abs(lambda - prev_lambda) > Matrix<T>::GetEps()) {
+  while (std::abs(lambda - prev_lambda) > eps) {
     prev_lambda = lambda;
-    lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
+    lambda = std::sqrt(std::abs(
+        __internal::PowerIterationMethod2Iteration(a, a2, u, y)));
     iter++;
     if (iter > max_iters) {
       break;
     }
   }
-  v1 = (std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
-  v2 = (-std::sqrt(lambda) * a * u + a2 * u) / (2 * lambda);
+  v1 = (lambda * a * u + a2 * u) / (2 * lambda * lambda);
+  v2 = (-lambda * a * u + a2 * u) / (2 * lambda * lambda);
+
+  std::vector<std::pair<std::complex<T>, Matrix<std::complex<T>>>> ans;
+  if (EuclideanNorm<T>(v1) > 100 * eps) {
+    ans.emplace_back(lambda, v1.ToComplex());
+  }
+  if (EuclideanNorm<T>(v2) > 100 * eps) {
+    ans.emplace_back(-lambda, v2.ToComplex());
+  }
+
   if (iters) {
     *iters = iter + 1;
     if (iter >= max_iters) {
@@ -184,8 +195,7 @@ std::vector<std::pair<std::complex<T>,
     }
   }
 
-  return {std::make_pair(std::sqrt(lambda), v1.ToComplex()),
-          std::make_pair(-std::sqrt(lambda), v2.ToComplex())};
+  return ans;
 }
 
 template<class T>
@@ -276,19 +286,15 @@ std::vector<std::pair<std::complex<T>,
     int check_step = 5,
     int force_method = -1) {
   if (force_method != -1) {
+    Matrix<T> y(a.Rows(), 1);
+    y(0) = 1;
     switch (force_method) {
       case 0: {
-        auto[is_converging, y] =
-            __internal::PowerIterationMethod1IterationConverges(a, check_iters, check_step);
         auto[e, v] =
             __internal::PowerMethodEigenvalues1(a, y, iters, max_iters);
-        std::cerr << "Method 1\n";
         return {std::make_pair(e, v.ToComplex())};
       }
       case 1: {
-        auto[is_converging, y] =
-            __internal::PowerIterationMethod2IterationConverges(a, a * a, check_iters, check_step);
-        std::cerr << "Method 2\n";
         return __internal::PowerMethodEigenvalues2(a, y, iters, max_iters);
       }
       case 2: {
@@ -300,23 +306,18 @@ std::vector<std::pair<std::complex<T>,
     }
   }
   {
-    auto[is_converging, y] =
-      __internal::PowerIterationMethod1IterationConverges(a, check_iters, check_step);
-    if (is_converging) {
-      auto[e, v] =
-        __internal::PowerMethodEigenvalues1(a, y, iters, max_iters);
-      std::cerr << "Method 1\n";
-      return {std::make_pair(e, v.ToComplex())};
+    Matrix<T> y(a.Rows(), 1);
+    y(0) = 1;
+    int iters_ = 0;
+    __internal::PowerMethodEigenvalues2(a, y, &iters_, max_iters, 0.1);
+    if (iters_ >= 0) {
+      auto res =  __internal::PowerMethodEigenvalues2(a, y, iters, max_iters);
+      if (iters) {
+        *iters += iters_;
+      }
+      return res;
     }
   }
-  {
-    auto[is_converging, y] =
-      __internal::PowerIterationMethod2IterationConverges(a, a * a, check_iters, check_step);
-    if (is_converging) {
-      std::cerr << "Method 2\n";
-      return __internal::PowerMethodEigenvalues2(a, y, iters, max_iters);
-    }
-  }
-  std::cerr << "Method 3\n";
+  // std::cerr << "Method 3\n";
   return __internal::PowerMethodEigenvalues3(a, iters, max_iters);
 }

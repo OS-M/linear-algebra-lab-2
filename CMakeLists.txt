@@ -40,9 +40,11 @@ set(UBSAN_FLAGS
         FORCE)
 
 # Build Types
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${ASAN_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${TSAN_FLAGS}")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread")
 
 add_executable(linear_algebra_lab_2
         main.cpp
         TimeMeasurer/time_measurer.cpp
-        Algebra/lu_decompose.h)
+        Algebra/lu_decompose.h Plot/plot.h Plot/plot_line.h Plot/plot_line.cpp Plot/plot.cpp)

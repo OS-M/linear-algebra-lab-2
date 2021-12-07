@@ -71,3 +71,30 @@ void Normalize(Polynomial<T>& a) {
     it /= max;
   }
 }
+
+template<class T>
+void SubtractPolynomial(Polynomial<T>& a, const Polynomial<T>& b) {
+  if (a.size() < b.size()) {
+    throw std::invalid_argument("");
+  }
+  int n = a.size();
+  int m = b.size();
+  for (int i = 0; i < b.size(); i++) {
+    a[n - m + i] -= b[i];
+  }
+}
+
+template<class T>
+Polynomial<T> DividePolynomial(Polynomial<T> a,
+                      const Polynomial<T>& b) {
+  int n = a.size();
+  int m = b.size();
+  Polynomial<T> ans;
+  for (int i = 0; n - i >= m; i++) {
+    ans.push_back(a[i] / b[0]);
+    Polynomial<T> x(n - m - i + 1);
+    x[0] = ans.back();
+    SubtractPolynomial(a, PolynomialMultiply(b, x));
+  }
+  return ans;
+}

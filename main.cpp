@@ -1,8 +1,12 @@
 #include <iostream>
+#include <fstream>
+#include <mutex>
+#include <shared_mutex>
+#include <thread>
 #include "Matrix/matrix.h"
 #include "Algebra/gauss.h"
 #include "Algebra/euclidean_norm.h"
-#include "Algebra/reflections_hessenberg.h"
+#include "Algebra/hessenberg_form.h"
 #include "Algebra/qr_algorithm.h"
 #include "Algebra/power_iteration_method.h"
 #include "Algebra/qr_decompose.h"
@@ -11,6 +15,7 @@
 #include "Algebra/polynomial.h"
 #include "Algebra/danilevski_eigenvalues.h"
 #include "Algebra/polynomial_roots.h"
+#include "Plot/plot.h"
 #include "TimeMeasurer/time_measurer.h"
 
 DMatrix Matrix1() {
@@ -51,42 +56,175 @@ DMatrix Matrix2() {
 }
 
 void Task1(double min, double max, int seed) {
-  {
-    int iters = 0;
-    auto ans = PowerMethodEigenvalues(Matrix1(), &iters, 1000);
-    std::cout << "Power iteration for matrix 1:\n";
-    for (auto[e, v]: ans) {
-      std::cout << e << '\n' << v;
+  // {
+  //   int iters = 0;
+  //   auto ans = PowerMethodEigenvalues(Matrix1(), &iters, 1000);
+  //   std::cout << "Power iteration for matrix 1:\n";
+  //   for (auto[e, v]: ans) {
+  //     std::cout << e << '\n' << v;
+  //   }
+  //   std::cout << "Iters: " << iters << '\n';
+  //   ans = PowerMethodEigenvalues(Matrix2(), &iters, 1000);
+  //   std::cout << "Power iteration for matrix 2:\n";
+  //   for (auto[e, v]: ans) {
+  //     std::cout << e << '\n' << v;
+  //   }
+  //   std::cout << "Iters: " << iters << '\n';
+  // }
+
+  std::vector<int> sizes{10, 50, 100, 200};
+  int tests_count = 12;
+  int max_iter = 1e4;
+  std::vector<std::vector<DMatrix>> v;
+  std::shared_mutex mutex;
+  int thread_num = 12;
+  std::cout << "Generating matrices...\n";
+  auto thread_main = [&](int size, int id) {
+    while (true) {
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = -1;
+      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 0);
+      mutex.lock_shared();
+      if (v.back().size() >= tests_count) {
+        mutex.unlock_shared();
+        break;
+      }
+      mutex.unlock_shared();
+      if (iter > 0) {
+        mutex.lock();
+        v.back().push_back(a);
+        std::cout << "!\n";
+        mutex.unlock();
+      }
     }
-    std::cout << "Iters: " << iters << '\n';
-    ans = PowerMethodEigenvalues(Matrix2(), &iters, 1000);
-    std::cout << "Power iteration for matrix 2:\n";
-    for (auto[e, v]: ans) {
-      std::cout << e << '\n' << v;
+  };
+  for (auto size: sizes) {
+    v.emplace_back();
+    std::vector<std::thread> threads;
+    threads.reserve(thread_num);
+    std::cout << size << '\n';
+    for (int i = 0; i < thread_num; i++) {
+      threads.emplace_back(thread_main, size, i);
     }
-    std::cout << "Iters: " << iters << '\n';
+    for (auto& thread: threads) {
+      thread.join();
+    }
+    while (v.back().size() > tests_count) {
+      v.back().pop_back();
+    }
+    std::cout << v.back().size() << '\n';
   }
 
-  std::vector<int> sizes{1000, 10000};
-  std::vector<double> times;
-  std::vector<int> iters;
-  for (auto size: sizes) {
-    times.push_back(0);
-    iters.push_back(0);
-    for (int t = 0; t < 5; t++) {
-      auto a = DMatrix::Random(size, size, min, max, seed);
-      TimeMeasurer time_measurer;
-      int iter;
-      PowerMethodEigenvalues(a, &iter, 1e2);
-      seed ^= iter;
-      times.back() += time_measurer.GetDuration();
-      iters.back() += iter;
+  Plot times_plot("Times", "size", "time", sizes);
+  Plot iters_plot("Iters", "size", "iters", sizes);
+
+  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3", "Auto"};
+  for (int method_ind = 0; method_ind < methods.size(); ++method_ind) {
+    PlotLine times_line(methods[method_ind]);
+    PlotLine iters_line(methods[method_ind]);
+    for (int i = 0; i < sizes.size(); i++) {
+      double time = 0;
+      int iters = 0;
+      for (const auto& m: v[i]) {
+        TimeMeasurer time_measurer;
+        int iter;
+        PowerMethodEigenvalues(m, &iter, 2 * max_iter, 20, 5, method_ind);
+        if (iter < 0) {
+          std::cerr << "Not converge" << '\n';
+          iter = 1000 * max_iter;
+        }
+        iters += iter;
+        time += time_measurer.GetDuration();
+      }
+      iters /= tests_count;
+      time /= tests_count;
+      times_line.AddValue(sizes[i], time);
+      iters_line.AddValue(sizes[i], iters);
+      std::cout << sizes[i] << '\n';
     }
-    iters.back() /= 5;
-    times.back() /= 5.;
-    std::cout << times.back() << '\n';
-    std::cout << iters.back() << '\n';
+    times_plot.AddPlotLine(times_line);
+    iters_plot.AddPlotLine(iters_line);
   }
+  std::ofstream out("../task1_plot.txt");
+  out << times_plot.ToString() << iters_plot.ToString();
+}
+
+void Task1_(double min, double max, int seed) {
+  std::vector<int> sizes{10, 50, 100, 200};
+  int tests_count = 12;
+  int max_iter = 1e4;
+  std::vector<std::vector<DMatrix>> v;
+  std::shared_mutex mutex;
+  int thread_num = 12;
+  std::cout << "Generating matrices...\n";
+  auto thread_main = [&](int size, int id) {
+    while (true) {
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = -1;
+      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 1);
+      mutex.lock_shared();
+      if (v.back().size() >= tests_count) {
+        mutex.unlock_shared();
+        break;
+      }
+      mutex.unlock_shared();
+      if (iter > 0) {
+        mutex.lock();
+        v.back().push_back(a);
+        std::cout << "!\n";
+        mutex.unlock();
+      }
+    }
+  };
+  for (auto size: sizes) {
+    v.emplace_back();
+    std::vector<std::thread> threads;
+    threads.reserve(thread_num);
+    std::cout << size << '\n';
+    for (int i = 0; i < thread_num; i++) {
+      threads.emplace_back(thread_main, size, i);
+    }
+    for (auto& thread: threads) {
+      thread.join();
+    }
+    while (v.back().size() > tests_count) {
+      v.back().pop_back();
+    }
+    std::cout << v.back().size() << '\n';
+  }
+
+  Plot times_plot("Times", "size", "time", sizes);
+  Plot iters_plot("Iters", "size", "iters", sizes);
+
+  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3", "Auto"};
+  for (int method_ind = 1; method_ind < methods.size(); ++method_ind) {
+    PlotLine times_line(methods[method_ind]);
+    PlotLine iters_line(methods[method_ind]);
+    for (int i = 0; i < sizes.size(); i++) {
+      double time = 0;
+      int iters = 0;
+      for (const auto& m: v[i]) {
+        TimeMeasurer time_measurer;
+        int iter;
+        PowerMethodEigenvalues(m, &iter, 5 * max_iter, 20, 5, method_ind);
+        if (iter < 0) {
+          std::cerr << "Not converge " << methods[method_ind] << '\n';
+          iter = 1000 * max_iter;
+        }
+        iters += iter;
+        time += time_measurer.GetDuration();
+      }
+      iters /= tests_count;
+      time /= tests_count;
+      times_line.AddValue(sizes[i], time);
+      iters_line.AddValue(sizes[i], iters);
+      std::cout << sizes[i] << '\n';
+    }
+    times_plot.AddPlotLine(times_line);
+    iters_plot.AddPlotLine(iters_line);
+  }
+  std::ofstream out("../task1_plot2.txt");
+  out << times_plot.ToString() << iters_plot.ToString();
 }
 
 template<class T>
@@ -162,14 +300,15 @@ int main() {
   Matrix<std::complex<double>>::SetEps(std::complex<double>(1e-6, 1e-6), 6);
 
   // {
-  //   Polynomial<double> p{-1, -25, -59, -33};
-  //   std::cout << PolynomialToString(p);
-  //   for (auto r: FindRoots(p, 1e-6)) {
-  //     std::cout << r << '\n';
-  //   }
+  //   Polynomial<double> a{1, 2, -3};
+  //   Polynomial<double> b{1, 3};
+  //   std::cout << PolynomialToString(a) << PolynomialToString(b);
+  //   std::cout << PolynomialToString(DividePolynomial(a, b));
   //   return 0;
   // }
-  // Task1(-100, 100, 228);
+  Task1_(-1000, 1000, 8917293);
+  // Task1(-1000, 1000, 8917293);
+  return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
@@ -183,6 +322,7 @@ int main() {
     //             {0, 0, 0, 1, 0}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
+    a = Matrix2();
 
     int k = 2;
     a(0, 0) = 5 * (k + 1);

@@ -26,7 +26,7 @@ std::optional<T> RefineRootNewton(const Polynomial <T>& a,
 }
 
 template<class T>
-std::optional<T> FindRootBinSearch(Polynomial <T> a, T l_, T r_, T eps) {
+std::optional<T> FindRootBinSearch(const Polynomial <T>& a, T l_, T r_, T eps) {
   auto l = l_;
   auto r = r_;
   bool rising = ValueIn(a, l) < ValueIn(a, r);
@@ -59,6 +59,26 @@ std::optional<T> FindRootBinSearch(Polynomial <T> a, T l_, T r_, T eps) {
   return {};
 }
 
+template<class T>
+std::vector<T> FindRootsOfOddPolynomial(const Polynomial <T>& a, T eps) {
+  if (a.size() == 2) {
+    return {-a[1] / a[0]};
+  }
+  std::vector<T> ans;
+  // for (int i = 1; i < extremums.size(); i++) {
+  //   auto root = __internal::FindRootBinSearch(a,
+  //                                             extremums[i - 1],
+  //                                             extremums[i], eps);
+  //   if (root.has_value()) {
+  //     root = __internal::RefineRootNewton(a, der, root.value(), eps, 1e2);
+  //     if (root.has_value()) {
+  //       ans.push_back(root.value());
+  //     }
+  //   }
+  // }
+  return ans;
+}
+
 }
 
 template<class T>
@@ -68,11 +88,11 @@ std::vector<T> FindRoots(const Polynomial <T>& a, T eps) {
   }
   auto der = Derivative(a);
   Normalize(der);
-  std::vector<T> extremums{-1e18};
+  std::vector<T> extremums{-1e4};
   for (auto it: FindRoots(der, eps)) {
     extremums.push_back(it);
   }
-  extremums.push_back(1e18);
+  extremums.push_back(1e4);
   std::vector<T> ans;
   for (int i = 1; i < extremums.size(); i++) {
     auto root = __internal::FindRootBinSearch(a,

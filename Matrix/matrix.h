@@ -240,7 +240,7 @@ Matrix<T> Matrix<T>::Zeros(int n, int m) {
 template<class T>
 Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
   Matrix<T> a(n, m);
-  std::mt19937 gen(seed);
+  thread_local static std::mt19937 gen(seed);
   std::uniform_real_distribution<T> dist(min, max);
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
@@ -253,7 +253,7 @@ Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
 template<class T>
 Matrix<T> Matrix<T>::RandomInts(int n, int m, int min, int max, int seed) {
   Matrix<T> a(n, m);
-  std::mt19937 gen(seed);
+  thread_local static std::mt19937 gen(seed);
   std::uniform_int_distribution<int> dist(min, max);
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
