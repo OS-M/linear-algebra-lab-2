@@ -227,6 +227,52 @@ void Task1_(double min, double max, int seed) {
   out << times_plot.ToString() << iters_plot.ToString();
 }
 
+void Task1__(double min, double max, int seed) {
+  int size = 10;
+  int count = 100;
+  int max_iter = 1e4;
+  int thread_num = 8;
+  std::vector<std::thread> threads;
+  std::vector<std::vector<int>> thread_ans;
+  auto thread_main = [&] (
+      std::vector<int>& v, int id, int algorithm_id) {
+    for (int i = 0; i < count; i++) {
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = 0;
+      PowerMethodEigenvalues(a, &iter, max_iter, 10, 5, algorithm_id);
+      if (iter < 0) {
+        iter = max_iter;
+      }
+      iter = std::min(iter, max_iter);
+      v[iter]++;
+    }
+  };
+  thread_ans.resize(thread_num, std::vector<int>(max_iter + 1));
+  for (int i = 0; i < thread_num; i++) {
+    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1, 3);
+  }
+  for (auto& thread: threads) {
+    thread.join();
+  }
+  std::vector<int> ans(max_iter + 1);
+  for (int i = 0; i < ans.size(); i++) {
+    for (int j = 0; j < thread_ans.size(); j++) {
+      ans[i] += thread_ans[j][i];
+    }
+  }
+  // ans.back() = 0;
+  std::vector<int> xs(max_iter + 1);
+  std::iota(xs.begin(), xs.end(), 0);
+  Plot plot("Times", "size", "time", xs);
+  PlotLine line("Auto");
+  for (int i = 0; i < ans.size(); i++) {
+    line.AddValue(i, ans[i]);
+  }
+  plot.AddPlotLine(line);
+  std::ofstream out("../task1_plot3.txt");
+  out << plot.ToString();
+}
+
 template<class T>
 void TestQrAlgorithm(const Matrix<T>& a) {
   std::cout << "Qr algorithm eigenvalues:\n";
@@ -308,9 +354,10 @@ int main() {
   //   std::cout << PolynomialToString(DividePolynomial(a, b));
   //   return 0;
   // }
-  Task1(-1e6, 1e6, 8917293);
-  // Task1_(-1000, 1000, 8917293);
-  // return 0;
+  // Task1(-1e6, 1e6, 8917293);
+  // Task1_(-1e6, 1e6, 8917293);
+  Task1__(-1e6, 1e6, 8917293);
+  return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);

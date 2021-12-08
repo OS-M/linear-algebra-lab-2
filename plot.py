@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import sys
 
 lines = open(sys.argv[1], "r").read()
