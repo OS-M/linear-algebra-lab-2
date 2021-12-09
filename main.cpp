@@ -72,24 +72,26 @@ void Task1(double min, double max, int seed) {
   //   std::cout << "Iters: " << iters << '\n';
   // }
 
-  std::vector<int> sizes{10, 50, 100, 1000};
+  std::vector<int> sizes{10, 50, 100, 200, 400, 800, 1000};
   int tests_count = 10;
-  int max_iter = 1e4;
+  int max_iter = 1e3;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
-  int thread_num = 12;
+  int thread_num = 11;
   std::cout << "Generating matrices...\n";
   auto thread_main = [&](int size, int id) {
     while (true) {
-      auto a = DMatrix::Random(size, size, min, max, seed + id);
-      int iter = -1;
-      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 0);
       mutex.lock_shared();
       if (v.back().size() >= tests_count) {
         mutex.unlock_shared();
         break;
       }
       mutex.unlock_shared();
+
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = -1;
+      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 0);
+
       if (iter > 0) {
         mutex.lock();
         v.back().push_back(a);
@@ -150,24 +152,26 @@ void Task1(double min, double max, int seed) {
 }
 
 void Task1_(double min, double max, int seed) {
-  std::vector<int> sizes{10, 50, 100, 200, 500};
+  std::vector<int> sizes{10, 100, 200, 400, 800, 1000};
   int tests_count = 10;
-  int max_iter = 1e4;
+  int max_iter = 1e3;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
   int thread_num = 12;
   std::cout << "Generating matrices...\n";
   auto thread_main = [&](int size, int id) {
     while (true) {
-      auto a = DMatrix::Random(size, size, min, max, seed + id);
-      int iter = -1;
-      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 1);
       mutex.lock_shared();
       if (v.back().size() >= tests_count) {
         mutex.unlock_shared();
         break;
       }
       mutex.unlock_shared();
+
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = -1;
+      PowerMethodEigenvalues(a, &iter, max_iter, 20, 5, 1);
+
       if (iter > 0) {
         mutex.lock();
         v.back().push_back(a);
@@ -196,7 +200,7 @@ void Task1_(double min, double max, int seed) {
   Plot times_plot("Times", "size", "time", sizes);
   Plot iters_plot("Iters", "size", "iters", sizes);
 
-  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3", "Auto"};
+  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3"};
   for (int method_ind = 1; method_ind < methods.size(); ++method_ind) {
     PlotLine times_line(methods[method_ind]);
     PlotLine iters_line(methods[method_ind]);
@@ -227,32 +231,41 @@ void Task1_(double min, double max, int seed) {
   out << times_plot.ToString() << iters_plot.ToString();
 }
 
-void Task1__(double min, double max, int seed) {
-  int size = 50;
-  int count = 1000;
-  int max_iter = 2000;
-  int thread_num = 12;
+PlotLine Task1__(double min, double max, int seed,
+                 int algorithm, int max_iter) {
+  int size = 120;
+  int count = 100;
+  int thread_num = 11;
   std::vector<std::thread> threads;
   std::vector<std::vector<int>> thread_ans;
   auto thread_main = [&](
-      std::vector<int>& v, int id, int algorithm_id) {
+      std::vector<int>& v, int id) {
     for (int i = 0; i < count; i++) {
-      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      if (i == 0) {
+        DMatrix::Random(0, 0, 0, 0, seed + id, true);
+      }
+      auto a = DMatrix::Random(size, size, min, max);
       int iter = 0;
-      PowerMethodEigenvalues(a, &iter, max_iter, 10, 5, algorithm_id);
+      auto vv = PowerMethodEigenvalues(a, &iter, max_iter, 10, 5, algorithm);
+      for (const auto& it: vv) {
+        if (std::abs(EuclideanNorm<std::complex<double>>(
+              a.ToComplex() * it.second - it.first * it.second)) > 10) {
+          iter = -1;
+        }
+      }
       if (iter < 0) {
         iter = max_iter;
       }
       iter = std::min(iter, max_iter);
       v[iter]++;
-      if ((i + 1) % 100 == 0) {
-        std::cout << id << ": " << i << '\n';
+      if ((i + 1) % 10 == 0) {
+        std::cout << id << ": " << i + 1 << '\n';
       }
     }
   };
   thread_ans.resize(thread_num, std::vector<int>(max_iter + 1));
   for (int i = 0; i < thread_num; i++) {
-    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1, 0);
+    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1);
   }
   for (auto& thread: threads) {
     thread.join();
@@ -263,14 +276,21 @@ void Task1__(double min, double max, int seed) {
       ans[i] += thread_answer[i];
     }
   }
-  std::vector<int> xs(max_iter + 1);
-  std::iota(xs.begin(), xs.end(), 0);
-  Plot plot("Times", "size", "time", xs);
-  PlotLine line("Auto");
+  PlotLine line(std::to_string(algorithm));
   for (int i = 0; i < ans.size(); i++) {
     line.AddValue(i, ans[i]);
   }
-  plot.AddPlotLine(line);
+  return line;
+}
+
+void Task1__Full(double min, double max, int seed) {
+  int max_iter = 2000;
+  std::vector<int> xs(max_iter + 1);
+  std::iota(xs.begin(), xs.end(), 0);
+  Plot plot("Plot", "Iters", "Count", xs);
+  for (int i = 0; i <= 2; i++) {
+    plot.AddPlotLine(Task1__(min, max, seed, i, max_iter));
+  }
   std::ofstream out("../task1_plot3.txt");
   out << plot.ToString();
 }
@@ -302,7 +322,7 @@ void TestQrAlgorithm(const Matrix<T>& a) {
 template<class T>
 void TestPowerMethod(const Matrix<T>& a) {
   int iters = 0;
-  auto ans = PowerMethodEigenvalues(a, &iters, 1000, 20, 3);
+  auto ans = PowerMethodEigenvalues(a, &iters, 1000, 20, 3, 1);
   std::cout << "Power iteration eigenvalues and eigenvectors:\n";
   for (auto[e, v]: ans) {
     std::cout << e << '\n' << v;
@@ -349,6 +369,20 @@ int main() {
   Matrix<double>::SetEps(eps, prec);
   Matrix<std::complex<double>>::SetEps(std::complex<double>(eps, eps), prec);
 
+  // for (int i = 0; i < 10000; i++) {
+  //   auto a = DMatrix::Random(20, 20, -100, 100);
+  //   int iter1 = 0;
+  //   int iter2 = 0;
+  //   PowerMethodEigenvalues(a, &iter1, 1000, 10, 5, 0);
+  //   PowerMethodEigenvalues(a, &iter2, 1000, 10, 5, 1);
+  //   if (iter1 > 0 && iter2 < 0) {
+  //     std::cout << a;
+  //     return 0;
+  //   }
+  // }
+  // return 0;
+
+
   // {
   //   Polynomial<double> a{1, 226.99, -310.27, -17936.9, 68579.4, -684};
   //   std::cout << PolynomialToString(a);
@@ -357,9 +391,9 @@ int main() {
   //   }
   //   return 0;
   // }
-  // Task1(-1e6, 1e6, 8917293);
-  // Task1_(-1e6, 1e6, 8917293);
-  // Task1__(-1e6, 1e6, 8917293);
+  // Task1(-100, 100, 8917293);
+  // Task1_(-100, 100, 8917293);
+  Task1__Full(-100, 100, 123634);
   // return 0;
 
   {

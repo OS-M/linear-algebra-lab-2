@@ -141,7 +141,7 @@ std::pair<T, Matrix<T>> PowerMethodEigenvalues1(
   }
   if (iters) {
     *iters = iter + 1;
-    if (iter >= max_iters) {
+    if (iter >= max_iters || EuclideanNorm<T>(u) < Matrix<T>::GetEps()) {
       *iters = -1;
     }
   }
@@ -190,7 +190,7 @@ std::vector<std::pair<std::complex<T>,
 
   if (iters) {
     *iters = iter + 1;
-    if (iter >= max_iters) {
+    if (iter >= max_iters || ans.empty()) {
       *iters = -1;
     }
   }

@@ -46,7 +46,8 @@ class Matrix {
 
   static Matrix<T> Ones(int n);
   static Matrix<T> Zeros(int n, int m);
-  static Matrix<T> Random(int n, int m, T min, T max, int seed = time(nullptr));
+  static Matrix<T> Random(int n, int m, T min, T max, int seed = time(nullptr),
+                          bool force_seed = false);
   static Matrix<T> RandomInts(int n, int m, int min, int max,
                               int seed = time(nullptr));
 
@@ -238,9 +239,13 @@ Matrix<T> Matrix<T>::Zeros(int n, int m) {
 }
 
 template<class T>
-Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed) {
+Matrix<T> Matrix<T>::Random(int n, int m, T min, T max, int seed,
+                            bool force_seed) {
   Matrix<T> a(n, m);
   thread_local static std::mt19937 gen(seed);
+  if (force_seed) {
+    gen.seed(seed);
+  }
   std::uniform_real_distribution<T> dist(min, max);
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {

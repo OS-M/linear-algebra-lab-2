@@ -6,7 +6,7 @@ lines = open(sys.argv[1], "r").read()
 step = int(sys.argv[2])
 
 plot_count = len(lines.strip().split("===")) - 1
-fig = plt.figure(figsize=(5 * plot_count, 5))
+fig = plt.figure(figsize=(15 * plot_count, 5))
 plot_num = 1
 
 for plot in lines.strip().split("==="):
@@ -16,13 +16,13 @@ for plot in lines.strip().split("==="):
     name = plot[0]
     x_label = plot[1]
     y_label = plot[2]
-    xs = [int(i) for i in plot[3].strip().split(' ')]
-    xs = xs[::step]
+    xs = np.array([int(i) for i in plot[3].strip().split(' ')])[::step]
 
     ax = fig.add_subplot(1, plot_count, plot_num)
     # ax.set_xticklabels(xs)
     ax.set_xticks(xs)
     ax.title.set_text(name)
+    ax.set_xticklabels([f'{i}-{i+step}' for i in xs[:-1]] + [f'>{xs[-1]}'])
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
@@ -32,7 +32,7 @@ for plot in lines.strip().split("==="):
         ys = []
         for j in range(0, len(y), step):
             ys.append(np.sum(y[j:j + step]))
-        ax.bar(xs, ys, label=line_name, width=30)
+        ax.bar(xs + 20 * i - 120, ys, label=line_name, width=30)
 
     plot_num += 1
     plt.legend()
