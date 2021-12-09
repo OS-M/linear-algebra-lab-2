@@ -8,7 +8,7 @@
 namespace __internal {
 
 template<class T>
-std::optional<T> RefineRootNewton(const Polynomial <T>& a,
+T RefineRootNewton(const Polynomial <T>& a,
                                   const Polynomial <T>& der,
                                   T x,
                                   T eps,
@@ -16,13 +16,12 @@ std::optional<T> RefineRootNewton(const Polynomial <T>& a,
   for (int i = 0; i < max_iters; ++i) {
     auto f_x = ValueIn(a, x);
     if (std::abs(f_x) < eps) {
-      // std::cerr << i << '\n';
-      return x;
+      break;
     }
     auto der_x = ValueIn(der, x);
     x -= f_x / der_x;
   }
-  return {};
+  return x;
 }
 
 template<class T>
@@ -59,51 +58,27 @@ std::optional<T> FindRootBinSearch(const Polynomial <T>& a, T l_, T r_, T eps) {
   return {};
 }
 
-template<class T>
-std::vector<T> FindRootsOfOddPolynomial(const Polynomial <T>& a, T eps) {
-  if (a.size() == 2) {
-    return {-a[1] / a[0]};
-  }
-  std::vector<T> ans;
-  // for (int i = 1; i < extremums.size(); i++) {
-  //   auto root = __internal::FindRootBinSearch(a,
-  //                                             extremums[i - 1],
-  //                                             extremums[i], eps);
-  //   if (root.has_value()) {
-  //     root = __internal::RefineRootNewton(a, der, root.value(), eps, 1e2);
-  //     if (root.has_value()) {
-  //       ans.push_back(root.value());
-  //     }
-  //   }
-  // }
-  return ans;
-}
-
 }
 
 template<class T>
-std::vector<T> FindRoots(const Polynomial <T>& a, T eps) {
-  if (a.size() == 2) {
-    return {-a[1] / a[0]};
-  }
+std::vector<T> FindRoots(Polynomial<T> a, T eps, T threshold) {
   auto der = Derivative(a);
-  Normalize(der);
-  std::vector<T> extremums{-1e4};
-  for (auto it: FindRoots(der, eps)) {
-    extremums.push_back(it);
-  }
-  extremums.push_back(1e4);
   std::vector<T> ans;
-  for (int i = 1; i < extremums.size(); i++) {
-    auto root = __internal::FindRootBinSearch(a,
-                                              extremums[i - 1],
-                                              extremums[i], eps);
+  while (a.size() > 2) {
+    auto x = __internal::RefineRootNewton(a, der, 1e9, eps, 1e4);
+    auto root =
+        __internal::FindRootBinSearch(a, x - threshold, x + threshold, eps);
     if (root.has_value()) {
-      root = __internal::RefineRootNewton(a, der, root.value(), eps, 1e2);
-      if (root.has_value()) {
-        ans.push_back(root.value());
-      }
+      ans.push_back(root.value());
+      a = DividePolynomial(a, {1, -root.value()});
+      der = Derivative(a);
+      // std::cerr << PolynomialToString(a);
+    } else {
+      break;
     }
+  }
+  if (a.size() == 2) {
+    ans.emplace_back(-a[1] / a[0]);
   }
   return ans;
 }
