@@ -228,10 +228,10 @@ void Task1_(double min, double max, int seed) {
 }
 
 void Task1__(double min, double max, int seed) {
-  int size = 10;
-  int count = 100;
-  int max_iter = 1e4;
-  int thread_num = 8;
+  int size = 50;
+  int count = 1000;
+  int max_iter = 2000;
+  int thread_num = 12;
   std::vector<std::thread> threads;
   std::vector<std::vector<int>> thread_ans;
   auto thread_main = [&](
@@ -245,22 +245,24 @@ void Task1__(double min, double max, int seed) {
       }
       iter = std::min(iter, max_iter);
       v[iter]++;
+      if ((i + 1) % 100 == 0) {
+        std::cout << id << ": " << i << '\n';
+      }
     }
   };
   thread_ans.resize(thread_num, std::vector<int>(max_iter + 1));
   for (int i = 0; i < thread_num; i++) {
-    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1, 3);
+    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1, 0);
   }
   for (auto& thread: threads) {
     thread.join();
   }
   std::vector<int> ans(max_iter + 1);
   for (int i = 0; i < ans.size(); i++) {
-    for (int j = 0; j < thread_ans.size(); j++) {
-      ans[i] += thread_ans[j][i];
+    for (auto& thread_answer: thread_ans) {
+      ans[i] += thread_answer[i];
     }
   }
-  // ans.back() = 0;
   std::vector<int> xs(max_iter + 1);
   std::iota(xs.begin(), xs.end(), 0);
   Plot plot("Times", "size", "time", xs);
