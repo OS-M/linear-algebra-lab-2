@@ -264,7 +264,7 @@ PlotLine Task1__(double min, double max, int seed,
       auto vv = PowerMethodEigenvalues(a, &iter, max_iter, 10, 5., algorithm);
       for (const auto& it: vv) {
         if (std::abs(EuclideanNorm<std::complex<double>>(
-              a.ToComplex() * it.second - it.first * it.second)) > 10) {
+            a.ToComplex() * it.second - it.first * it.second)) > 10) {
           iter = -1;
         }
       }
@@ -356,7 +356,11 @@ void Task1__Optimize(double min, double max, int seed, int max_iter) {
         for (const auto& m: v[i]) {
           TimeMeasurer time_measurer;
           int iter;
-          __internal::PowerMethodEigenvalues3(m, m * m, &iter, 2 * max_iter, false);
+          __internal::PowerMethodEigenvalues3(m,
+                                              m * m,
+                                              &iter,
+                                              2 * max_iter,
+                                              false);
           if (iter < 0) {
             std::cerr << "Not converge1" << '\n';
             iter = 1000 * max_iter;
@@ -374,7 +378,11 @@ void Task1__Optimize(double min, double max, int seed, int max_iter) {
         for (const auto& m: v[i]) {
           TimeMeasurer time_measurer;
           int iter;
-          __internal::PowerMethodEigenvalues3(m, m * m, &iter, 2 * max_iter, true);
+          __internal::PowerMethodEigenvalues3(m,
+                                              m * m,
+                                              &iter,
+                                              2 * max_iter,
+                                              true);
           if (iter < 0) {
             std::cerr << "Not converge2" << '\n';
             iter = 1000 * max_iter;
@@ -456,9 +464,11 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
   std::cout << "Danilevski Polynomial: " << PolynomialToString(
       PolynomialMultiply(polynomial));
 
-  auto roots = FindRoots(polynomial[0], 1e-6, 1.);
+  T threshold = 0.1;
+
+  auto roots = FindRoots(polynomial[0], 1e-6, threshold);
   for (int i = 1; i < polynomial.size(); i++) {
-    auto r = FindRoots(polynomial[i], 1e-6, 1.);
+    auto r = FindRoots(polynomial[i], 1e-6, threshold);
     for (auto it: r) {
       roots.push_back(it);
     }
@@ -468,6 +478,7 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
   complex_roots.reserve(roots.size());
   for (auto r: roots) {
     complex_roots.emplace_back(r);
+    std::cerr << r << ' ' << ValueIn(PolynomialMultiply(polynomial), r) << '\n';
   }
 
   auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
@@ -483,6 +494,59 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
     std::cout << "\n#########\n";
   }
   std::cout << "===================\n\n\n";
+}
+
+void Task2Frob(double min, double max, int seed, int count) {
+  std::vector<int> sizes{50, 100, 500, 1000};
+  Plot times_plot("Times", "size", "time", sizes);
+  PlotLine times_line1("Frobenius Form");
+  PlotLine times_line2("n^3");
+
+  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3"};
+  for (auto size: sizes) {
+    double time = 0;
+    for (int i = 0; i < count; i++) {
+      auto a = DMatrix::Random(size, size, min, max, seed);
+      TimeMeasurer time_measurer;
+      FrobeniusForm(a);
+      time += time_measurer.GetDuration();
+    }
+    time /= count;
+    times_line1.AddValue(size, time);
+    times_line2.AddValue(size, 1. * size * size * size / 1e9);
+    std::cout << size << '\n';
+  }
+  times_plot.AddPlotLine(times_line1);
+  times_plot.AddPlotLine(times_line2);
+  std::ofstream out("../task2_plot.txt");
+  out << times_plot.ToString();
+}
+
+void Task2Dan(double min, double max, int seed, int count) {
+  std::vector<int> sizes{50, 100, 500, 1000};
+  Plot times_plot("Times", "size", "time", sizes);
+  PlotLine times_line1("D");
+  PlotLine times_line2("n");
+
+  std::vector<std::string> methods{"Mod 1", "Mod 2", "Mod 3"};
+  for (auto size: sizes) {
+    double time = 0;
+    for (int i = 0; i < count; i++) {
+      auto a = DMatrix::Random(size, size, min, max, seed);
+      a = FrobeniusForm(a);
+      TimeMeasurer time_measurer;
+      DanilevskiPolynomial(a);
+      time += time_measurer.GetDuration();
+    }
+    time /= count;
+    times_line1.AddValue(size, time);
+    times_line2.AddValue(size, 1. * size / 1e5);
+    std::cout << size << '\n';
+  }
+  times_plot.AddPlotLine(times_line1);
+  // times_plot.AddPlotLine(times_line2);
+  std::ofstream out("../task2_plot2.txt");
+  out << times_plot.ToString();
 }
 
 int main() {
@@ -506,18 +570,21 @@ int main() {
 
 
   // {
-  //   Polynomial<double> a{1, 226.99, -310.27, -17936.9, 68579.4, -684};
+  //   Polynomial<double> a{1, 1, 0};
   //   std::cout << PolynomialToString(a);
   //   for (auto root: FindRoots(a, eps, 1.)) {
   //     std::cout << root << '\n';
   //   }
   //   return 0;
   // }
+
   // Task1(-100, 100, 8917293);
   // Task1_(-1, 1, 8917293);
   // Task1__Full(-100, 100, 123634);
   // Task1__Optimize(-100, 100, 12335123, 1e3);
-  // return 0;
+  // Task2Frob(-100, 100, 8917293, 3);
+  Task2Dan(-100, 100, 8917293, 4);
+  return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
@@ -531,7 +598,7 @@ int main() {
     //             {0, 0, 0, 1, 0}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
-    a = Matrix2();
+    a = Matrix1();
 
     int k = 2;
     // a(0, 0) = 5 * (k + 1);
@@ -549,7 +616,7 @@ int main() {
     std::cout << a << "\n\n";
 
     TestQrAlgorithm(a);
-    // TestDanilevskiMethod(a);
-    TestPowerMethod(a);
+    TestDanilevskiMethod(a);
+    // TestPowerMethod(a);
   }
 }
