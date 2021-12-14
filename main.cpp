@@ -443,6 +443,7 @@ void TestPowerMethod(const Matrix<T>& a) {
     std::cout << "Norm: " <<
               std::abs(EuclideanNorm<std::complex<T>>(
                   a.ToComplex() * v - e * v));
+    std::cout << '\n' << std::abs(EuclideanNorm<std::complex<T>>(v));
     std::cout << "\n#########\n";
   }
   std::cout << "Iters: " << iters << "\n===================\n\n\n";
@@ -450,11 +451,19 @@ void TestPowerMethod(const Matrix<T>& a) {
 
 template<class T>
 void TestDanilevskiMethod(const Matrix<T>& a) {
-  auto polynomial = PolynomialMultiply(DanilevskiPolynomial(FrobeniusForm(a)));
+  auto polynomial = DanilevskiPolynomial(FrobeniusForm(a));
 
-  std::cout << "Danilevski Polynomial: " << PolynomialToString(polynomial);
+  std::cout << "Danilevski Polynomial: " << PolynomialToString(
+      PolynomialMultiply(polynomial));
 
-  auto roots = FindRoots(polynomial, 1e-6, 1.);
+  auto roots = FindRoots(polynomial[0], 1e-6, 1.);
+  for (int i = 1; i < polynomial.size(); i++) {
+    auto r = FindRoots(polynomial[i], 1e-6, 1.);
+    for (auto it: r) {
+      roots.push_back(it);
+    }
+  }
+
   std::vector<std::complex<double>> complex_roots;
   complex_roots.reserve(roots.size());
   for (auto r: roots) {
@@ -522,7 +531,7 @@ int main() {
     //             {0, 0, 0, 1, 0}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
-    a = Matrix1();
+    a = Matrix2();
 
     int k = 2;
     // a(0, 0) = 5 * (k + 1);
