@@ -570,7 +570,7 @@ int main() {
 
 
   // {
-  //   Polynomial<double> a{1, 1, 0};
+  //   Polynomial<double> a{12, 2, 23, -1000};
   //   std::cout << PolynomialToString(a);
   //   for (auto root: FindRoots(a, eps, 1.)) {
   //     std::cout << root << '\n';
@@ -583,8 +583,8 @@ int main() {
   // Task1__Full(-100, 100, 123634);
   // Task1__Optimize(-100, 100, 12335123, 1e3);
   // Task2Frob(-100, 100, 8917293, 3);
-  Task2Dan(-100, 100, 8917293, 4);
-  return 0;
+  // Task2Dan(-100, 100, 8917293, 4);
+  // return 0;
 
   {
     // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
@@ -598,7 +598,7 @@ int main() {
     //             {0, 0, 0, 1, 0}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
-    a = Matrix1();
+    a = Matrix2();
 
     int k = 2;
     // a(0, 0) = 5 * (k + 1);

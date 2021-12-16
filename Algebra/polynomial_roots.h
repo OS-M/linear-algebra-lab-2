@@ -65,7 +65,16 @@ std::vector<T> FindRoots(Polynomial<T> a, T eps, T threshold) {
   auto der = Derivative(a);
   std::vector<T> ans;
   while (a.size() > 2) {
-    auto x = __internal::RefineRootNewton(a, der, 1e9, 100 * eps, 1e4);
+    auto c = std::abs(*std::max_element(a.begin() + 1, a.end(), [] (T c1, T c2) {
+      return std::abs(c1) < std::abs(c2);
+    }));
+    auto b = std::abs(*std::max_element(a.begin(), a.end() - 1, [] (T c1, T c2) {
+      return std::abs(c1) < std::abs(c2);
+    }));
+    auto p = std::max(std::abs(a.back()) / (b + std::abs(a.back())),
+                      1 + c / std::abs(a[0]));
+    std::cerr << p << '\n';
+    auto x = __internal::RefineRootNewton(a, der, p, 100 * eps, 1e4);
     auto root =
         __internal::FindRootBinSearch(a, x - threshold, x + threshold, eps);
     if (root.has_value()) {
