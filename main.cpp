@@ -73,7 +73,7 @@ void Task1(double min, double max, int seed) {
   // }
 
   std::vector<int> sizes{10, 50, 100, 200, 400, 800, 1000};
-  int tests_count = 10;
+  int tests_count = 5;
   int max_iter = 1e3;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
@@ -153,7 +153,7 @@ void Task1(double min, double max, int seed) {
 
 void Task1_(double min, double max, int seed) {
   std::vector<int> sizes{10, 50, 100, 200, 400, 800, 1000};
-  int tests_count = 10;
+  int tests_count = 5;
   int max_iter = 1e3;
   std::vector<std::vector<DMatrix>> v;
   std::shared_mutex mutex;
@@ -357,7 +357,6 @@ void Task1__Optimize(double min, double max, int seed, int max_iter) {
           TimeMeasurer time_measurer;
           int iter;
           __internal::PowerMethodEigenvalues3(m,
-                                              m * m,
                                               &iter,
                                               2 * max_iter,
                                               false);
@@ -379,7 +378,6 @@ void Task1__Optimize(double min, double max, int seed, int max_iter) {
           TimeMeasurer time_measurer;
           int iter;
           __internal::PowerMethodEigenvalues3(m,
-                                              m * m,
                                               &iter,
                                               2 * max_iter,
                                               true);
@@ -429,12 +427,12 @@ void TestQrAlgorithm(const Matrix<T>& a) {
   auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
   for (int i = 0; i < vectors.size(); ++i) {
     std::cout << qr_ans[i] << '\n';
-    if (vectors[i].Rows() != 0) {
-      // std::cout << vectors[i];
+    // if (vectors[i].Rows() != 0) {
+      std::cout << vectors[i];
       std::cout << "Norm: " <<
                 std::abs(EuclideanNorm<std::complex<T>>(
                     a.ToComplex() * vectors[i] - qr_ans[i] * vectors[i]));
-    }
+    // }
     std::cout << "\n#########\n";
   }
   std::cout << "Iters: " << iters << "\n===================\n\n\n";
@@ -459,18 +457,31 @@ void TestPowerMethod(const Matrix<T>& a) {
 
 template<class T>
 void TestDanilevskiMethod(const Matrix<T>& a) {
-  auto polynomial = DanilevskiPolynomial(FrobeniusForm(a));
+  std::vector<std::vector<std::tuple
+                              <RowOperation, int, int, T>>> operations;
+  auto ff = FrobeniusForm(a, &operations);
+  // std::cerr << ff;
+  // std::cerr << ff.Row(0);
+  std::vector<int> matrix_sizes;
+  auto polynomial = DanilevskiPolynomial(ff, &matrix_sizes);
 
   std::cout << "Danilevski Polynomial: " << PolynomialToString(
       PolynomialMultiply(polynomial));
 
   T threshold = 0.1;
 
-  auto roots = FindRoots(polynomial[0], 1e-6, threshold);
-  for (int i = 1; i < polynomial.size(); i++) {
+  std::vector<T> roots;
+  std::vector<Matrix<T>> vectors;
+  int shift = 0;
+  for (int i = 0; i < matrix_sizes.size(); i++) {
     auto r = FindRoots(polynomial[i], 1e-6, threshold);
     for (auto it: r) {
       roots.push_back(it);
+    }
+    auto v = EigenVectorsForFrobeniusForm(a.Rows(), shift, matrix_sizes[i], operations[i], r);
+    shift += matrix_sizes[i];
+    for (auto it: v) {
+      vectors.push_back(it);
     }
   }
 
@@ -481,16 +492,15 @@ void TestDanilevskiMethod(const Matrix<T>& a) {
     std::cerr << r << ' ' << ValueIn(PolynomialMultiply(polynomial), r) << '\n';
   }
 
-  auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
+  // auto vectors = FindEigenvectorsByValues(a.ToComplex(), complex_roots);
   for (int i = 0; i < vectors.size(); ++i) {
     if (vectors[i].Rows() == 0) {
       continue;
     }
     std::cout << roots[i] << '\n';
-    // std::cout << vectors[i];
+    std::cout << vectors[i];
     std::cout << "Norm: " <<
-              std::abs(EuclideanNorm<std::complex<T>>(
-                  a.ToComplex() * vectors[i] - roots[i] * vectors[i]));
+              EuclideanNorm<T>(a * vectors[i] - roots[i] * vectors[i]);
     std::cout << "\n#########\n";
   }
   std::cout << "===================\n\n\n";
@@ -549,6 +559,81 @@ void Task2Dan(double min, double max, int seed, int count) {
   out << times_plot.ToString();
 }
 
+void Task3(double min, double max, int seed) {
+  std::vector<int> sizes{10, 50, 100, 200, 300};
+  int tests_count = 5;
+  int max_iter = 600000;
+  std::vector<std::vector<DMatrix>> v;
+  std::shared_mutex mutex;
+  int thread_num = 12;
+  std::cout << "Generating matrices...\n";
+  auto thread_main = [&](int size, int id) {
+    while (true) {
+      mutex.lock_shared();
+      if (v.back().size() >= tests_count) {
+        mutex.unlock_shared();
+        break;
+      }
+      mutex.unlock_shared();
+
+      auto a = DMatrix::Random(size, size, min, max, seed + id);
+      int iter = -1;
+      auto x =
+          QrAlgorithm(ReflectionsHessenberg(a), &iter, max_iter);
+
+      if (iter > 0) {
+        mutex.lock();
+        v.back().push_back(a);
+        std::cout << "!\n";
+        mutex.unlock();
+      }
+    }
+  };
+  for (auto size: sizes) {
+    v.emplace_back();
+    std::vector<std::thread> threads;
+    threads.reserve(thread_num);
+    std::cout << size << '\n';
+    for (int i = 0; i < thread_num; i++) {
+      threads.emplace_back(thread_main, size, i);
+    }
+    for (auto& thread: threads) {
+      thread.join();
+    }
+    while (v.back().size() > tests_count) {
+      v.back().pop_back();
+    }
+    std::cout << v.back().size() << '\n';
+  }
+
+  Plot times_plot("Times", "size", "time", sizes);
+
+  PlotLine times_line("QR");
+  for (int i = 0; i < sizes.size(); i++) {
+    double time = 0;
+    int iters = 0;
+    for (const auto& m: v[i]) {
+      TimeMeasurer time_measurer;
+      int iter;
+      QrAlgorithm(ReflectionsHessenberg(m), &iter, max_iter);
+      if (iter < 0) {
+        std::cerr << "Not converge" << '\n';
+        iter = 1000 * max_iter;
+      }
+      iters += iter;
+      time += time_measurer.GetDuration();
+    }
+    iters /= tests_count;
+    time /= tests_count;
+    times_line.AddValue(sizes[i], time);
+    std::cout << sizes[i] << '\n';
+  }
+  times_plot.AddPlotLine(times_line);
+
+  std::ofstream out("../task3_plot1.txt");
+  out << times_plot.ToString();
+}
+
 int main() {
   auto eps = 1e-6;
   auto prec = 6;
@@ -578,17 +663,20 @@ int main() {
   //   return 0;
   // }
 
-  // Task1(-100, 100, 8917293);
-  // Task1_(-1, 1, 8917293);
+  // Task1(-10, 10, 8917293);
+  // Task1_(-10, 10, 8917293);
   // Task1__Full(-100, 100, 123634);
   // Task1__Optimize(-100, 100, 12335123, 1e3);
+
   // Task2Frob(-100, 100, 8917293, 3);
   // Task2Dan(-100, 100, 8917293, 4);
-  // return 0;
+
+  Task3(-100, 100, 8917293);
+  return 0;
 
   {
-    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
-    auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
+    auto a = DMatrix::RandomInts(3, 3, -5, 10, 228);
+    // auto a = DMatrix::RandomInts(3, 3, -5, 10, 1337);
     // auto a = DMatrix::Random(5, 5, -5, 10, 8541657);
     // auto a = DMatrix::Random(5, 5, -5, 10, 456468);
     // a = DMatrix{{1, 1, 1, 1, 1},
@@ -596,6 +684,9 @@ int main() {
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 1, 0, 0},
     //             {0, 0, 0, 1, 0}};
+    // a = DMatrix{{2, 2, 3},
+    //             {2, 3, 0},
+    //             {0, 0, 4}};
 
     // a = DMatrix{{0, 1}, {1, 0}};
     a = Matrix2();
@@ -613,10 +704,10 @@ int main() {
 
     // a = Matrix2();
 
-    std::cout << a << "\n\n";
+    std::cout << a.ToWolframString() << "\n\n";
 
     TestQrAlgorithm(a);
-    TestDanilevskiMethod(a);
+    // TestDanilevskiMethod(a);
     // TestPowerMethod(a);
   }
 }

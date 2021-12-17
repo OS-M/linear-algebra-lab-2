@@ -11,7 +11,6 @@ template<class T>
 std::pair<std::complex<T>, std::complex<T>>
 PowerMethodEigenvaluesComplexIteration(
     const Matrix<std::complex<T>>& a,
-    const Matrix<std::complex<T>>& squared_a,
     Matrix<std::complex<T>>& y,
     Matrix<std::complex<T>>& u) {
   y.Assign(a * u);
@@ -23,7 +22,7 @@ PowerMethodEigenvaluesComplexIteration(
     l(i, 0) = u(i).real();
     l(i, 1) = au(i).real();
   }
-  auto rc = -1 * squared_a * u;
+  auto rc = -1 * a * (a * u);
   Matrix<T> r(u.Rows(), 1);
   for (int i = 0; i < u.Rows(); i++) {
     r(i) = rc(i).real();
@@ -77,12 +76,11 @@ std::pair<bool, Matrix<T>> PowerIterationMethod1IterationConverges(
 template<class T>
 T PowerIterationMethod2Iteration(
     const Matrix<T>& a,
-    const Matrix<T>& a2,
     Matrix<T>& u,
     Matrix<T>& y) {
-  y.Assign(a2 * u);
+  y.Assign(a * (a * u));
   u.Assign(y / EuclideanNorm<T>(y));
-  auto lambda = u.ScalarProduct(a2 * u);
+  auto lambda = u.ScalarProduct(a * (a * u));
   return lambda;
 }
 
@@ -100,7 +98,6 @@ bool DoSequenceConverge(const std::vector<T>& v, T eps) {
 template<class T>
 std::pair<bool, Matrix<T>> PowerIterationMethod2IterationConverges(
     const Matrix<T>& a,
-    const Matrix<T>& a2,
     int iters,
     T converge_eps) {
   int n = a.Rows();
@@ -109,11 +106,11 @@ std::pair<bool, Matrix<T>> PowerIterationMethod2IterationConverges(
   auto u = y / EuclideanNorm<T>(y);
   auto lambda = u.ScalarProduct(a * u);
   for (int i = 0; i < iters; i++) {
-    lambda = __internal::PowerIterationMethod2Iteration(a, a2, u, y);
+    lambda = __internal::PowerIterationMethod2Iteration(a, u, y);
   }
   lambda = std::sqrt(std::abs(lambda));
-  auto v1 = (lambda * a * u + a2 * u) / (2 * lambda * lambda);
-  auto v2 = (-lambda * a * u + a2 * u) / (2 * lambda * lambda);
+  auto v1 = (lambda * a * u + a * (a * u)) / (2 * lambda * lambda);
+  auto v2 = (-lambda * a * u + a * (a * u)) / (2 * lambda * lambda);
   if ((EuclideanNorm<T>(a * v1 - lambda * v1) < converge_eps &&
   EuclideanNorm<T>(v1) > Matrix<T>::GetEps()) ||
       (EuclideanNorm<T>(a * v2 + lambda * v2) < converge_eps &&
@@ -160,7 +157,6 @@ template<class T>
 std::vector<std::pair<std::complex<T>,
                       Matrix<std::complex<T>>>> PowerMethodEigenvalues2(
     const Matrix<T>& a,
-    const Matrix<T>& a2,
     Matrix<T>& y,
     int* iters = nullptr,
     int max_iters = 100,
@@ -171,7 +167,7 @@ std::vector<std::pair<std::complex<T>,
   }
   int n = a.Rows();
   auto u = y / EuclideanNorm<T>(y);
-  auto lambda = std::sqrt(std::abs(u.ScalarProduct(a2 * u)));
+  auto lambda = std::sqrt(std::abs(u.ScalarProduct(a * (a * u))));
   auto v1 = u;
   auto v2 = u;
   int iter = 0;
@@ -179,14 +175,14 @@ std::vector<std::pair<std::complex<T>,
   while (std::abs(lambda - prev_lambda) > eps) {
     prev_lambda = lambda;
     lambda = std::sqrt(std::abs(
-        __internal::PowerIterationMethod2Iteration(a, a2, u, y)));
+        __internal::PowerIterationMethod2Iteration(a, u, y)));
     iter++;
     if (iter > max_iters) {
       break;
     }
   }
-  v1 = (lambda * a * u + a2 * u) / (2 * lambda * lambda);
-  v2 = (-lambda * a * u + a2 * u) / (2 * lambda * lambda);
+  v1 = (lambda * a * u + a * (a * u)) / (2 * lambda * lambda);
+  v2 = (-lambda * a * u + a * (a * u)) / (2 * lambda * lambda);
 
   std::vector<std::pair<std::complex<T>, Matrix<std::complex<T>>>> ans;
   if (EuclideanNorm<T>(v1) > eps) {
@@ -210,7 +206,6 @@ template<class T>
 std::vector<std::pair<std::complex<T>,
                       Matrix<std::complex<T>>>> PowerMethodEigenvalues3(
     const Matrix<T>& a,
-    const Matrix<T>& a2,
     int* iters = nullptr,
     int max_iters = 100,
     bool optimize = false) {
@@ -221,7 +216,6 @@ std::vector<std::pair<std::complex<T>,
   int n = a.Rows();
 
   auto complex_a = a.ToComplex();
-  auto complex_squared_a = a2.ToComplex();
 
   Matrix<std::complex<T>> complex_y(n, 1);
   complex_y(0) = 1;
@@ -242,7 +236,7 @@ std::vector<std::pair<std::complex<T>,
     u.Assign(complex_y / EuclideanNorm<std::complex<T>>(complex_y));
     auto[p1, p2] =
     __internal::PowerMethodEigenvaluesComplexIteration(
-        complex_a, complex_squared_a, complex_y, u);
+        complex_a, complex_y, u);
     prev_r1 = p1;
     prev_r2 = p2;
     r1 = p1;
@@ -254,7 +248,7 @@ std::vector<std::pair<std::complex<T>,
       std::abs(prev_r2 - r2) > std::abs(Matrix<T>::GetEps())) {
     auto[p1, p2] =
     __internal::PowerMethodEigenvaluesComplexIteration(
-        complex_a, complex_squared_a, complex_y, u);
+        complex_a, complex_y, u);
     prev_r1 = r1;
     prev_r2 = r2;
     r1 = p1;
@@ -267,7 +261,7 @@ std::vector<std::pair<std::complex<T>,
   }
 
   auto u1 = complex_a * u;
-  auto u2 = complex_squared_a * u;
+  auto u2 = complex_a * (complex_a * u);
 
   Matrix<std::complex<T>> v1(u.Rows(), 1);
   Matrix<std::complex<T>> v2(u.Rows(), 1);
@@ -324,26 +318,25 @@ std::vector<std::pair<std::complex<T>,
       }
       case 1: {
         return __internal::PowerMethodEigenvalues2(
-            a, a * a, y, iters, max_iters);
+            a, y, iters, max_iters);
       }
       case 2: {
         return __internal::PowerMethodEigenvalues3(
-            a, a * a, iters, max_iters);
+            a, iters, max_iters);
       }
       default: {
         break;
       }
     }
   }
-  auto a2 = a * a;
   {
     auto [converges, y] =
         __internal::PowerIterationMethod2IterationConverges(
-            a, a2, check_iters, converge_eps);
+            a, check_iters, converge_eps);
     if (converges) {
       int iters_ = 0;
       auto res = __internal::PowerMethodEigenvalues2(
-          a, a2, y, &iters_, max_iters);
+          a, y, &iters_, max_iters);
       if (iters_ >= 0 && !res.empty()) {
         if (iters) {
           *iters = check_iters + iters_;
@@ -353,5 +346,5 @@ std::vector<std::pair<std::complex<T>,
     }
   }
   // std::cerr << "Method 3\n";
-  return __internal::PowerMethodEigenvalues3(a, a2, iters, max_iters);
+  return __internal::PowerMethodEigenvalues3(a, iters, max_iters);
 }

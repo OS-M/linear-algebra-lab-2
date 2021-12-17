@@ -32,8 +32,6 @@ std::vector<Matrix<std::complex<T>>> FindEigenvectorsByValues(
   Matrix<std::complex<T>> b(matrix.Rows(), 1);
   std::vector<Matrix<std::complex<T>>> ans;
 
-  // auto[l, u] = LuDecompose(a);
-
   for (auto value: values) {
     for (int i = 0; i < matrix.Rows(); i++) {
       for (int j = 0; j < matrix.Cols(); j++) {
