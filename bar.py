@@ -32,7 +32,7 @@ for plot in lines.strip().split("==="):
         ys = []
         for j in range(0, len(y), step):
             ys.append(np.sum(y[j:j + step]))
-        ax.bar(xs + 20 * i - 120, ys, label=line_name, width=30)
+        ax.bar(xs, ys, label=line_name, width=30)
 
     plot_num += 1
     plt.legend()

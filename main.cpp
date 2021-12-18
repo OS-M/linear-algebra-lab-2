@@ -414,6 +414,58 @@ void Task1__Full(double min, double max, int seed) {
   out << plot.ToString();
 }
 
+void Task3Bar(double min, double max, int seed, int max_iter) {
+  std::vector<int> xs(max_iter + 1);
+  std::iota(xs.begin(), xs.end(), 0);
+  Plot plot("Plot", "Iters", "Count", xs);
+
+  int size = 60;
+  int count = 2000;
+  int thread_num = 11;
+  std::vector<std::thread> threads;
+  std::vector<std::vector<int>> thread_ans;
+  auto thread_main = [&](
+      std::vector<int>& v, int id) {
+    for (int i = 0; i < count; i++) {
+      if (i == 0) {
+        DMatrix::Random(0, 0, 0, 0, seed + id, true);
+      }
+      auto a = DMatrix::Random(size, size, min, max);
+      int iter = 0;
+      auto vv =
+          QrAlgorithm(ReflectionsHessenberg(a), &iter, max_iter);
+      if (iter < 0) {
+        iter = max_iter;
+      }
+      iter = std::min(iter, max_iter);
+      v[iter]++;
+      if ((i + 1) % 100 == 0) {
+        std::cout << id << ": " << i + 1 << '\n';
+      }
+    }
+  };
+  thread_ans.resize(thread_num, std::vector<int>(max_iter + 1));
+  for (int i = 0; i < thread_num; i++) {
+    threads.emplace_back(thread_main, std::ref(thread_ans[i]), i + 1);
+  }
+  for (auto& thread: threads) {
+    thread.join();
+  }
+  std::vector<int> ans(max_iter + 1);
+  for (int i = 0; i < ans.size(); i++) {
+    for (auto& thread_answer: thread_ans) {
+      ans[i] += thread_answer[i];
+    }
+  }
+  PlotLine line("QR");
+  for (int i = 0; i < ans.size(); i++) {
+    line.AddValue(i, ans[i]);
+  }
+  plot.AddPlotLine(line);
+  std::ofstream out("../task3_bar.txt");
+  out << plot.ToString();
+}
+
 template<class T>
 void TestQrAlgorithm(const Matrix<T>& a) {
   std::cout << "Qr algorithm eigenvalues:\n";
@@ -560,7 +612,7 @@ void Task2Dan(double min, double max, int seed, int count) {
 }
 
 void Task3(double min, double max, int seed) {
-  std::vector<int> sizes{10, 50, 100, 200, 300};
+  std::vector<int> sizes{10, 50, 100, 200, 250};
   int tests_count = 5;
   int max_iter = 600000;
   std::vector<std::vector<DMatrix>> v;
@@ -671,7 +723,8 @@ int main() {
   // Task2Frob(-100, 100, 8917293, 3);
   // Task2Dan(-100, 100, 8917293, 4);
 
-  Task3(-100, 100, 8917293);
+  // Task3(-100, 100, 8917293);
+  Task3Bar(-100, 100, 8917293, 2000);
   return 0;
 
   {
